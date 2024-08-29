@@ -1,11 +1,11 @@
 import tkinter as tk
-from matriz import Matriz  # Importa la clase Matriz desde matriz.py
+from matriz import Matriz  # Importar la clase Matriz desde matriz.py
 
 class MenuAplicacion:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Menú Principal")
-        self.root.geometry("300x200")
+        self.root.geometry("800x600")
         self.crear_menu()
 
     def crear_menu(self):
@@ -14,7 +14,7 @@ class MenuAplicacion:
         etiqueta.pack(pady=20)
 
         # Botón para Reducción Gaussiana
-        boton_reduccion = tk.Button(self.root, text="Reducción Gaussiana", font=("Arial", 12), command=self.abrir_interfaz_gauss)
+        boton_reduccion = tk.Button(self.root, text="Eliminación Gaussiana", font=("Arial", 12), command=self.abrir_interfaz_gauss)
         boton_reduccion.pack(pady=10)
 
         # Botón para salir
@@ -26,8 +26,8 @@ class MenuAplicacion:
     def abrir_interfaz_gauss(self):
         # Crear nueva ventana para Reducción Gaussiana
         self.ventana_gauss = tk.Toplevel(self.root)
-        self.ventana_gauss.title("Método de Gauss-Jordan")
-        self.ventana_gauss.geometry("600x400")
+        self.ventana_gauss.title("Eliminación Gaussiana")
+        self.ventana_gauss.geometry("800x600")
 
         # Tamaño de la matriz
         frame_tamano = tk.Frame(self.ventana_gauss)
@@ -51,7 +51,7 @@ class MenuAplicacion:
         self.etiqueta_titulo_matriz.pack()
 
         # Área de texto para el resultado
-        self.text_resultado = tk.Text(self.ventana_gauss, height=30, width=80)
+        self.text_resultado = tk.Text(self.ventana_gauss, height=30, width=70)
         self.text_resultado.pack(pady=10)
 
         # Botón para calcular
@@ -76,10 +76,9 @@ class MenuAplicacion:
         n = int(self.entrada_n.get())
         matriz = Matriz(n, self.entradas)  # Crear una instancia de la clase Matriz
         if matriz.matriz is not None:
-            resultado = matriz.gauss_jordan()  # Llamar al método gauss_jordan
+            resultado = matriz.eliminacion_gaussiana()  # Llamar al método eliminacion_gaussiana
             self.text_resultado.delete("1.0", tk.END)
             self.text_resultado.insert(tk.END, resultado)
 
 def iniciar_menu():
     app = MenuAplicacion()
-
