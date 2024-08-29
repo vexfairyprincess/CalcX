@@ -1,53 +1,113 @@
-def print_matrix(matrix):
-    for row in matrix:
-        print(' '.join(f"{x:8.4f}" for x in row))
-    print()
+import tkinter as tk
+from tkinter import messagebox
 
-def make_identity(matrix):
-    n = len(matrix)
+def imprimir_matriz(matriz, paso):
+    texto = f"Paso {paso}:\n"
+    for fila in matriz:
+        texto += "  ".join(f"{valor:8.4f}" for valor in fila) + "\n"
+    texto += "\n"
+    return texto
+
+def gauss_jordan(matriz):
+    n = len(matriz)
+    paso = 1
+    resultado = ""
+    
+    # Operación de Gauss-Jordan
+    for i in range(n):
+        # Hacer que el pivote sea 1 dividiendo la fila por el pivote
+        pivote = matriz[i][i]
+        if pivote == 0:
+            # Verificar si hay un 0 en el pivote y cambiar filas si es necesario
+            for j in range(i + 1, n):
+                if matriz[j][i] != 0:
+                    # Intercambiar filas
+                    matriz[i], matriz[j] = matriz[j], matriz[i]
+                    break
+            pivote = matriz[i][i]
+        
+        # Dividir toda la fila por el pivote para hacer que el pivote sea 1
+        matriz[i] = [elemento / pivote for elemento in matriz[i]]
+        resultado += imprimir_matriz(matriz, paso)
+        paso += 1
+        
+        # Hacer ceros en todas las demás posiciones de la columna del pivote
+        for j in range(n):
+            if i != j:
+                factor = matriz[j][i]
+                matriz[j] = [matriz[j][k] - factor * matriz[i][k] for k in range(n + 1)]
+                resultado += imprimir_matriz(matriz, paso)
+                paso += 1
+
+    return resultado
+
+def obtener_matriz(n, entradas):
+    matriz = []
+    for i in range(n):
+        fila = []
+        for j in range(n + 1):
+            try:
+                valor = float(entradas[i][j].get())
+            except ValueError:
+                messagebox.showerror("Error", f"Introduce un número válido en la posición [{i+1}, {j+1}].")
+                return None
+            fila.append(valor)
+        matriz.append(fila)
+    return matriz
+
+def mostrar_resultado():
+    n = int(entrada_n.get())
+    matriz = obtener_matriz(n, entradas)
+    if matriz is not None:
+        resultado = gauss_jordan(matriz)
+        text_resultado.delete("1.0", tk.END)
+        text_resultado.insert(tk.END, resultado)
+
+def crear_entradas_matriz():
+    for widget in frame_matriz.winfo_children():
+        widget.destroy()
+    
+    n = int(entrada_n.get())
+    global entradas
+    entradas = [[tk.Entry(frame_matriz, width=10) for j in range(n + 1)] for i in range(n)]
 
     for i in range(n):
-        # Hacer que el elemento diagonal sea 1
-        diag = matrix[i][i]
-        if diag != 1:
-            print(f"Dividiendo la fila {i+1} por {diag:.4f}")
-            for j in range(n):
-                matrix[i][j] /= diag
-            print_matrix(matrix)
+        for j in range(n + 1):
+            entradas[i][j].grid(row=i, column=j, padx=5, pady=5)
+    
+    etiqueta_titulo_matriz.config(text=f"Introduce los coeficientes de la matriz de {n}x{n+1}:")
 
-        # Hacer ceros en la columna de la diagonal
-        for k in range(n):
-            if k != i:
-                factor = matrix[k][i]
-                if factor != 0:
-                    print(f"Restando {factor:.4f} veces la fila {i+1} de la fila {k+1}")
-                    for j in range(n):
-                        matrix[k][j] -= factor * matrix[i][j]
-                    print_matrix(matrix)
+# Interfaz gráfica usando tkinter
+root = tk.Tk()
+root.title("Método de Gauss-Jordan")
 
-    return matrix
+# Tamaño de la matriz
+frame_tamano = tk.Frame(root)
+frame_tamano.pack(pady=10)
 
-def main():
-    # Solicitar el tamaño de la matriz
-    n = int(input("Introduce el tamaño de la matriz cuadrada: "))
+etiqueta_n = tk.Label(frame_tamano, text="Número de ecuaciones:")
+etiqueta_n.pack(side=tk.LEFT)
 
-    # Crear la matriz
-    matrix = []
-    print("Introduce los elementos de la matriz fila por fila:")
-    for i in range(n):
-        row = list(map(float, input(f"Fila {i+1}: ").split()))
-        matrix.append(row)
+entrada_n = tk.Entry(frame_tamano, width=5)
+entrada_n.pack(side=tk.LEFT)
+entrada_n.insert(0, "3")
 
-    # Mostrar la matriz inicial
-    print("\nMatriz inicial:")
-    print_matrix(matrix)
+boton_crear = tk.Button(frame_tamano, text="Crear Matriz", command=crear_entradas_matriz)
+boton_crear.pack(side=tk.LEFT, padx=10)
 
-    # Convertir la matriz en la identidad
-    identity_matrix = make_identity(matrix)
+# Entradas para la matriz
+frame_matriz = tk.Frame(root)
+frame_matriz.pack(pady=10)
 
-    # Mostrar la matriz identidad resultante
-    print("Matriz identidad resultante:")
-    print_matrix(identity_matrix)
+etiqueta_titulo_matriz = tk.Label(root, text="Introduce los coeficientes de la matriz:")
+etiqueta_titulo_matriz.pack()
 
-if __name__ == "__main__":
-    main()
+# Área de texto para el resultado
+text_resultado = tk.Text(root, height=20, width=70)
+text_resultado.pack(pady=10)
+
+# Botón para calcular
+boton_calcular = tk.Button(root, text="Calcular", command=mostrar_resultado)
+boton_calcular.pack(pady=10)
+
+root.mainloop()
