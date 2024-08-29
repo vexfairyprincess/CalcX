@@ -32,7 +32,7 @@ class Matriz:
         texto += "\n"
         return texto
 
-    def gauss_jordan(self):
+    def eliminacion_gaussiana(self):
         if not self.matriz:
             return "Matriz no válida."
 
