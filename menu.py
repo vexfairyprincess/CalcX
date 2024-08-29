@@ -51,7 +51,7 @@ class MenuAplicacion:
         self.etiqueta_titulo_matriz.pack()
 
         # Área de texto para el resultado
-        self.text_resultado = tk.Text(self.ventana_gauss, height=10, width=50)
+        self.text_resultado = tk.Text(self.ventana_gauss, height=30, width=80)
         self.text_resultado.pack(pady=10)
 
         # Botón para calcular

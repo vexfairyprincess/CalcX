@@ -22,10 +22,10 @@ class Matriz:
             matriz.append(fila)
         return matriz
 
-    def imprimir_matriz(self, paso):
-        texto = f"Paso {paso}:\n"
+    def imprimir_matriz(self, paso, operacion):
+        texto = f"Paso {paso} ({operacion}):\n"
         for fila in self.matriz:
-            texto += "  ".join(f"{valor:8.4f}" for valor in fila) + "\n"
+            texto += "  ".join(f"{valor:.2f}" if valor != 0 else "0.00" for valor in fila) + "\n"
         texto += "\n"
         return texto
 
@@ -46,12 +46,14 @@ class Matriz:
                     if self.matriz[j][i] != 0:
                         # Intercambiar filas
                         self.matriz[i], self.matriz[j] = self.matriz[j], self.matriz[i]
+                        resultado += self.imprimir_matriz(paso, f"Intercambiar fila {i + 1} con fila {j + 1}")
+                        paso += 1
                         break
                 pivote = self.matriz[i][i]
 
             # Dividir toda la fila por el pivote para hacer que el pivote sea 1
             self.matriz[i] = [elemento / pivote for elemento in self.matriz[i]]
-            resultado += self.imprimir_matriz(paso)
+            resultado += self.imprimir_matriz(paso, f"Dividir fila {i + 1} entre {pivote:.2f}")
             paso += 1
 
             # Hacer ceros en todas las demás posiciones de la columna del pivote
@@ -59,7 +61,7 @@ class Matriz:
                 if i != j:
                     factor = self.matriz[j][i]
                     self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in range(self.n + 1)]
-                    resultado += self.imprimir_matriz(paso)
+                    resultado += self.imprimir_matriz(paso, f"Restar {factor:.2f} veces la fila {i + 1} de la fila {j + 1}")
                     paso += 1
 
         return resultado
