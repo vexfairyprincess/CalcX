@@ -19,10 +19,6 @@ class MenuAplicacion:
                                     command=self.abrir_interfaz_gauss)
         boton_reduccion.pack(pady=10)
 
-        boton_reduccion_ecuLinear = tk.Button(self.root, text="Método de Eliminación 2x2", font=("Arial", 12),
-                                              command=self.abrir_interfaz_ecuaciones)
-        boton_reduccion_ecuLinear.pack(pady=10)
-
         boton_salir = tk.Button(self.root, text="Salir", font=("Arial", 12), command=self.root.quit)
         boton_salir.pack(pady=10)
 
