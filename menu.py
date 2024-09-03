@@ -1,6 +1,7 @@
 import tkinter as tk
 from matriz import Matriz  # Importar la clase Matriz desde matriz.py
-from Eliminacion import Ecuaciones_Lineales
+from matriz import Ecuaciones_Lineales
+from tkinter import messagebox
 
 class MenuAplicacion:
     def __init__(self):
@@ -34,17 +35,24 @@ class MenuAplicacion:
         self.ventana_gauss.geometry("800x600")
 
         # Tamaño de la matriz
-        frame_tamano = tk.Frame(self.ventana_gauss)
-        frame_tamano.pack(pady=10)
+        frame_configuracion = tk.Frame(self.ventana_gauss)
+        frame_configuracion.pack(pady=10)
 
-        etiqueta_n = tk.Label(frame_tamano, text="Número de ecuaciones:")
+        etiqueta_n = tk.Label(frame_configuracion, text="Número de ecuaciones:")
         etiqueta_n.pack(side=tk.LEFT)
 
-        self.entrada_n = tk.Entry(frame_tamano, width=5)
+        self.entrada_n = tk.Entry(frame_configuracion, width=5)
         self.entrada_n.pack(side=tk.LEFT)
         self.entrada_n.insert(0, "3")
+        
+        etiqueta_variables = tk.Label(frame_configuracion, text="Número de variables:")
+        etiqueta_variables.pack(side=tk.LEFT)
+        
+        self.entrada_variables = tk.Entry(frame_configuracion, width=5)
+        self.entrada_variables.pack(side=tk.LEFT)
+        self.entrada_variables.insert(0, "3")
 
-        boton_crear = tk.Button(frame_tamano, text="Crear Matriz", command=self.crear_entradas_matriz)
+        boton_crear = tk.Button(frame_configuracion, text="Crear Matriz", command=self.crear_entradas_matriz)
         boton_crear.pack(side=tk.LEFT, padx=10)
 
         # Entradas para la matriz
@@ -67,14 +75,23 @@ class MenuAplicacion:
         for widget in self.frame_matriz.winfo_children():
             widget.destroy()
 
-        n = int(self.entrada_n.get())
-        self.entradas = [[tk.Entry(self.frame_matriz, width=10) for j in range(n + 1)] for i in range(n)]
+        try:
+            n = int(self.entrada_n.get())
+            variables = int(self.entrada_variables.get())
+        
+            if n<= 0 or variables <= 0:
+                raise ValueError("El número de ecuaciones y variables debe ser mayor a 0.")
+            
+            self.entradas = [[tk.Entry(self.frame_matriz, width=10) for j in range(variables + 1)] for i in range(n)]
 
-        for i in range(n):
-            for j in range(n + 1):
-                self.entradas[i][j].grid(row=i, column=j, padx=5, pady=5)
+            for i in range(n):
+                for j in range(variables + 1):
+                    self.entradas[i][j].grid(row=i, column=j, padx=5, pady=5)
 
-        self.etiqueta_titulo_matriz.config(text=f"Introduce los coeficientes de la matriz de {n}x{n + 1}:")
+            self.etiqueta_titulo_matriz.config(text=f"Introduce los coeficientes de la matriz de {n}x{variables + 1}:")
+            
+        except ValueError as ve:
+            messagebox.showerror("Error", f"Error en la entrada: {ve}")
 
     def mostrar_resultado(self):
         n = int(self.entrada_n.get())
