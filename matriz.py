@@ -123,14 +123,14 @@ class Matriz:
                     if self.matriz[j][i] != 0:
                         # Intercambiar filas
                         self.matriz[i], self.matriz[j] = self.matriz[j], self.matriz[i]
-                        resultado += self.imprimir_matriz(paso, f"Intercambiar fila {i + 1} con fila {j + 1}")
+                        resultado += self.imprimir_matriz(paso, f"f{i + 1} <-> f{j + 1}")
                         paso += 1
                         break
                 pivote = self.matriz[i][i]
 
             # Dividir toda la fila por el pivote para hacer que el pivote sea 1
             self.matriz[i] = [elemento / pivote for elemento in self.matriz[i]]
-            resultado += self.imprimir_matriz(paso, f"Dividir fila {i + 1} entre {pivote:.2f}")
+            resultado += self.imprimir_matriz(paso, f"f{i + 1} -> (1/{pivote:.2f}) * f{i + 1}")
             paso += 1
 
             # Hacer ceros en todas las demás posiciones de la columna del pivote
@@ -138,7 +138,7 @@ class Matriz:
                 if i != j:
                     factor = self.matriz[j][i]
                     self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in range(self.n + 1)]
-                    resultado += self.imprimir_matriz(paso, f"Restar {factor:.2f} veces la fila {i + 1} de la fila {j + 1}")
+                    resultado += self.imprimir_matriz(paso, f"f{j+1} -> f{j+1} - {factor:.2f} * f{i + 1}")
                     paso += 1
 
         return resultado
