@@ -1,6 +1,7 @@
 import tkinter as tk
 from matriz import Matriz 
-from tkinter import messagebox
+from tkinter import messagebox, Button
+
 
 class MenuAplicacion:
     def __init__(self):
@@ -47,7 +48,7 @@ class MenuAplicacion:
         self.entrada_variables.pack(side=tk.LEFT)
         self.entrada_variables.insert(0, "3")
 
-        boton_crear = tk.Button(frame_configuracion, text="Crear Matriz", command=self.crear_entradas_matriz)
+        boton_crear: Button = tk.Button(frame_configuracion, text="Crear Matriz", command=self.crear_entradas_matriz)
         boton_crear.pack(side=tk.LEFT, padx=10)
 
         # Entradas para la matriz
@@ -95,50 +96,6 @@ class MenuAplicacion:
             resultado = matriz.eliminacion_gaussiana()  # Llamar al método eliminacion_gaussiana
             self.text_resultado.delete("1.0", tk.END)
             self.text_resultado.insert(tk.END, resultado)
-
-    def abrir_interfaz_ecuaciones(self):
-        self.ventana_ecuaciones = tk.Toplevel(self.root)
-        self.ventana_ecuaciones.title("Método de Eliminación para Ecuaciones 2x2")
-        self.ventana_ecuaciones.geometry("500x200")
-
-        # Marco para ingresar las ecuaciones de forma horizontal
-        frame_ecuaciones = tk.Frame(self.ventana_ecuaciones)
-        frame_ecuaciones.pack(pady=20, padx=20)
-
-        labels = ["a1*x +", "b1*y =", "c1", "a2*x +", "b2*y =", "c2"]
-        self.entries = {}
-        row = 0
-        col = 0
-        for i, label in enumerate(labels):
-            if i == 3:  # Nueva fila para la segunda ecuación
-                row += 1
-                col = 0
-            entry = tk.Entry(frame_ecuaciones, width=5)
-            entry.grid(row=row, column=col, padx=2)
-            col += 1
-            tk.Label(frame_ecuaciones, text=label).grid(row=row, column=col, padx=2)
-            col += 1
-            self.entries[label] = entry
-
-        boton_calcular = tk.Button(self.ventana_ecuaciones, text="Calcular", command=self.calcular_solucion)
-        boton_calcular.pack(pady=20)
-
-        self.resultado_label = tk.Label(self.ventana_ecuaciones, text="")
-        self.resultado_label.pack()
-
-    def calcular_solucion(self):
-        try:
-            a1 = float(self.entries["a1*x +"].get())
-            b1 = float(self.entries["b1*y ="].get())
-            c1 = float(self.entries["c1"].get())
-            a2 = float(self.entries["a2*x +"].get())
-            b2 = float(self.entries["b2*y ="].get())
-            c2 = float(self.entries["c2"].get())
-            sistema = Ecuaciones_Lineales(a1, b1, c1, a2, b2, c2)
-            x, y = sistema.resolver()
-            self.resultado_label.config(text=f"La solución es x = {x}, y = {y}")
-        except Exception as e:
-            self.resultado_label.config(text=str(e))
 
 
 def iniciar_menu():
