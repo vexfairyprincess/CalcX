@@ -1,6 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
 
+#Resolver error de divison entre 0 en caso de soluciones infinitas
+#Resolver como se imprimen los resultados ej: x1 = a x2 = b x3 = c
+#Implementar el intercambio de filas
+
+
 class Matriz:
     """
     Clase que representa una matriz y permite realizar operaciones como la eliminación Gaussiana.
@@ -116,17 +121,21 @@ class Matriz:
         # Operación de Gauss-Jordan
         for i in range(self.n):
             # Hacer que el pivote sea 1 dividiendo la fila por el pivote
-            pivote = self.matriz[i][i]
-            if pivote == 0:
-                # Verificar si hay un 0 en el pivote y cambiar filas si es necesario
-                for j in range(i + 1, self.n):
+            if self.matriz[i][i] == 0:
+                if all(self.matriz[i][j] == 0 for j in range(len(self.matriz[i]))):
+                    continue
+                for j in range(i +1, self.n):
                     if self.matriz[j][i] != 0:
-                        # Intercambiar filas
+                        #Se realiza el intercambio de filas en caso de pivote 0
                         self.matriz[i], self.matriz[j] = self.matriz[j], self.matriz[i]
                         resultado += self.imprimir_matriz(paso, f"f{i + 1} <-> f{j + 1}")
                         paso += 1
                         break
-                pivote = self.matriz[i][i]
+            
+            pivote = self.matriz[i][i]
+            
+            if pivote == 0:
+                continue
 
             # Dividir toda la fila por el pivote para hacer que el pivote sea 1
             self.matriz[i] = [elemento / pivote for elemento in self.matriz[i]]
@@ -140,58 +149,49 @@ class Matriz:
                     self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in range(self.n + 1)]
                     resultado += self.imprimir_matriz(paso, f"f{j+1} -> f{j+1} - {factor:.2f} * f{i + 1}")
                     paso += 1
-
+        resultado += self.interpretar_resultado()
         return resultado
     
-class Ecuaciones_Lineales:
-    def __init__(self, a1, b1, c1, a2, b2, c2):
-        self.a1 = a1
-        self.b1 = b1
-        self.c1 = c1
-        self.a2 = a2
-        self.b2 = b2
-        self.c2 = c2
+    def interpretar_resultado(self):
+        """
+    Interpreta la matriz reducida para expresar las soluciones en términos de variables básicas y libres.
 
-    def calcular_mcd(self, a, b):
-        #algoritmo de euclides para MCD
-        while b != 0:
-            a, b = b, a % b
-        return a
-
-    def simplificar_fraccion(self, numerador, denominador):
-        #simplifica una fracción usando el MCD
-        mcd = self.calcular_mcd(numerador, denominador)
-        return numerador // mcd, denominador // mcd
-
-    def resolver(self):
-        # multiplicar las ecuaciones para igualar los coeficientes de una variable.
-        factor1 = self.a2
-        factor2 = self.a1
-
-        a1_new = self.a1 * factor1
-        b1_new = self.b1 * factor1
-        c1_new = self.c1 * factor1
-
-        a2_new = self.a2 * factor2
-        b2_new = self.b2 * factor2
-        c2_new = self.c2 * factor2
-
-        # restar las dos ecuaciones para eliminar x.
-        coef_y = b1_new - b2_new
-        constante_y = c1_new - c2_new
-
-        # resolver y
-        if coef_y == 0:
-            raise ValueError("El sistema no tiene solución única.")
-        y_numerador, y_denominador = constante_y, coef_y
-        y_numerador, y_denominador = self.simplificar_fraccion(y_numerador, y_denominador)
-        y = y_numerador / y_denominador
-
-        # sustituir y en una de las ecuaciones iniciales para encontrar x.
-        x_numerador = self.c1 - self.b1 * y
-        x_denominador = self.a1
-
-        x_numerador, x_denominador = self.simplificar_fraccion(int(x_numerador), int(x_denominador))
-        x = x_numerador / x_denominador
-
-        return x, y
+    Retorna:
+    --------
+    str
+        Cadena de texto que representa la solución del sistema en términos de variables básicas y libres.
+    """
+        n, m = len(self.matriz), len(self.matriz[0]) - 1
+        pivotes = [-1] * m # Lista para almacenar las columnas de los pivotes
+        variables_libres = []
+        
+        for i in range(n):
+            for j in range(m):
+                if self.matriz[i][j] == 1 and all(self.matriz[k][j] == 0 for k in range(n) if k != i):
+                    pivotes[j] = i
+                    break
+                
+        #Constructor del string de la solucion
+        resultado = "Solucion del sistema:\n"
+        soluciones = {}
+        
+        for j in range(m):
+            if pivotes[j] == -1:
+                variables_libres.append(f"x{j + 1}")
+                soluciones[f"x{j + 1}"] = f"x{j + 1} es libre"
+            else:
+                fila = pivotes[j]
+                ecuacion = f"x{j + 1} = {self.matriz[fila][-1]}"
+                for k in range(j+1, m):
+                    if self.matriz[fila][k] != 0:
+                        coef = self.matriz[fila][k]
+                        if coef < 0:
+                            ecuacion += f" - {-coef}x{k+1}"
+                        else:
+                            ecuacion += f" + {coef}x{k+1}"
+                soluciones[f"x{j + 1}"] = ecuacion
+        
+        for var, expr, in soluciones.items():
+            resultado += f"{expr}\n"
+            
+        return resultado

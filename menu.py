@@ -1,6 +1,5 @@
 import tkinter as tk
-from matriz import Matriz  # Importar la clase Matriz desde matriz.py
-from matriz import Ecuaciones_Lineales
+from matriz import Matriz 
 from tkinter import messagebox
 
 class MenuAplicacion:
