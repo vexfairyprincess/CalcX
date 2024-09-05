@@ -93,7 +93,7 @@ class Matriz:
         texto = f"Paso {paso} ({operacion}):\n"  # Encabezado con el número del paso y la operación realizada
         for fila in self.matriz:
             # Formatear cada valor de la fila a 8 caracteres de ancho y 4 decimales de precisión
-           texto += "  ".join(f"{int(valor) if isinstance(valor, float) and valor.is_integer() else valor:.2f}" for valor in fila) + "\n"
+           texto += "  ".join(f"{valor:.2f}" for valor in fila) + "\n"
         texto += "\n"
         return texto
 
@@ -136,23 +136,26 @@ class Matriz:
             if abs(pivote) < 1e-10:
                 continue
 
-            # Dividir toda la fila por el pivote para hacer que el pivote sea 1
+            # **Dividir toda la fila por el pivote para hacer que el pivote sea 1**
             self.matriz[fila_actual] = [elemento / pivote for elemento in self.matriz[fila_actual]]
+            # **Imprimir después de la normalización de la fila**
             resultado += self.imprimir_matriz(paso, f"f{fila_actual + 1} -> (1/{pivote:.2f}) * f{fila_actual + 1}")
             paso += 1
 
-            # Hacer ceros en todas las demás filas en la columna del pivote
+            # **Hacer ceros en todas las demás filas en la columna del pivote**
             for i in range(filas):
                 if i != fila_actual:
                     factor = self.matriz[i][col]
                     if abs(factor) > 1e-10:  # Solo restar si el factor es significativo
+                        # **Actualizar correctamente la fila antes de la impresión**
                         self.matriz[i] = [self.matriz[i][k] - factor * self.matriz[fila_actual][k] for k in range(columnas)]
+                        # **Imprimir después de la modificación de cada fila**
                         resultado += self.imprimir_matriz(paso, f"f{i + 1} -> f{i + 1} - ({factor:.2f}) * f{fila_actual + 1}")
                         paso += 1
 
             fila_actual += 1
 
-        # Interpretar y presentar la solución
+        # **Interpretar y presentar la solución solo después de todos los pasos**
         resultado += self.interpretar_resultado()
         return resultado
 

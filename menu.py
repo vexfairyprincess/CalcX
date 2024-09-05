@@ -125,18 +125,19 @@ class MenuAplicacion:
     def mostrar_resultado(self):
         n = int(self.entrada_n.get())
         matriz = Matriz(n, self.entradas)  # Crear una instancia de la clase Matriz
+        
         if matriz.matriz is not None:
-            resultado = matriz.calcular_result()  # mostrar solo resultado final
+            resultado_pasos = matriz.eliminacion_gaussiana()  # Calcular el paso a paso
+            resultado_final = matriz.interpretar_resultado()
+            
             self.text_resultado.delete("1.0", tk.END)
-            self.text_resultado.insert(tk.END, resultado)
-
-            #seleccionar si quiere observar el paso a paso
-            self.boton_paso_a_paso = tk.Button(self.ventana_gauss, text="Paso a Paso", bg="light yellow",
-                                                   command=lambda: self.mostrar_paso_a_paso(matriz))
+            self.text_resultado.insert(tk.END, resultado_final)
+            
+            self.boton_paso_a_paso = tk.Button(self.ventana_gauss, text = "Paso a Paso", bg="light yellow",
+                                               command=lambda: self.mostrar_paso_a_paso(resultado_pasos))
             self.boton_paso_a_paso.grid(row=3, column=3, padx=10, pady=10)
-
-    def mostrar_paso_a_paso(self, matriz):
-        resultado_pasos = matriz.eliminacion_gaussiana()  # Calcular el paso a paso
+            
+    def mostrar_paso_a_paso(self, resultado_pasos):
         self.text_resultado.delete("1.0", tk.END)
         self.text_resultado.insert(tk.END, resultado_pasos)
 
