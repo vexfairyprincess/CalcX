@@ -1,10 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
-#Resolver error de divison entre 0 en caso de soluciones infinitas
-#Resolver como se imprimen los resultados ej: x1 = a x2 = b x3 = c
-#Implementar el intercambio de filas
-
+# resolver error de impresion del paso a paso
 
 class Matriz:
     """
@@ -21,7 +18,7 @@ class Matriz:
     --------
     __init__(self, n, entradas=None):
         Constructor que inicializa la matriz y obtiene sus valores a partir de las entradas proporcionadas.
-    
+
     obtener_matriz(self, entradas):
         Método que convierte las entradas de la interfaz gráfica en una lista de listas (matriz).
 
@@ -98,7 +95,7 @@ class Matriz:
         """
         texto = f"Paso {paso} ({operacion}):\n"  # Encabezado con el número del paso y la operación realizada
         for fila in self.matriz:
-        # Formatear cada valor de la fila a 8 caracteres de ancho y 4 decimales de precisión
+            # Formatear cada valor de la fila a 8 caracteres de ancho y 4 decimales de precisión
             texto += "  ".join(f"{valor:.2f}" if valor != 0 else "0.00" for valor in fila) + "\n"
         texto += "\n"
         return texto
@@ -118,40 +115,38 @@ class Matriz:
         paso = 1
         resultado = ""
 
-        # Operación de Gauss-Jordan
         for i in range(self.n):
-            # Hacer que el pivote sea 1 dividiendo la fila por el pivote
+            # Manejar pivote cero
             if self.matriz[i][i] == 0:
-                if all(self.matriz[i][j] == 0 for j in range(len(self.matriz[i]))):
-                    continue
-                for j in range(i +1, self.n):
+                for j in range(i + 1, self.n):
                     if self.matriz[j][i] != 0:
-                        #Se realiza el intercambio de filas en caso de pivote 0
                         self.matriz[i], self.matriz[j] = self.matriz[j], self.matriz[i]
                         resultado += self.imprimir_matriz(paso, f"f{i + 1} <-> f{j + 1}")
                         paso += 1
                         break
-            
-            pivote = self.matriz[i][i]
-            
-            if pivote == 0:
+
+            # Si después de intentar intercambiar sigue siendo cero, continua al siguiente paso
+            if self.matriz[i][i] == 0:
                 continue
 
-            # Dividir toda la fila por el pivote para hacer que el pivote sea 1
-            self.matriz[i] = [elemento / pivote for elemento in self.matriz[i]]
+            # Normalizar fila i para que el pivote sea 1
+            pivote = self.matriz[i][i]
+            self.matriz[i] = [x / pivote for x in self.matriz[i]]
             resultado += self.imprimir_matriz(paso, f"f{i + 1} -> (1/{pivote:.2f}) * f{i + 1}")
             paso += 1
 
-            # Hacer ceros en todas las demás posiciones de la columna del pivote
+            # Eliminar todos los otros elementos en la columna i
             for j in range(self.n):
                 if i != j:
                     factor = self.matriz[j][i]
-                    self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in range(self.n + 1)]
-                    resultado += self.imprimir_matriz(paso, f"f{j+1} -> f{j+1} - {factor:.2f} * f{i + 1}")
+                    self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in
+                                      range(len(self.matriz[0]))]
+                    resultado += self.imprimir_matriz(paso, f"f{j + 1} -> f{j + 1} - {factor:.2f} * f{i + 1}")
                     paso += 1
+
         resultado += self.interpretar_resultado()
         return resultado
-    
+
     def interpretar_resultado(self):
         """
     Interpreta la matriz reducida para expresar las soluciones en términos de variables básicas y libres.
@@ -162,19 +157,19 @@ class Matriz:
         Cadena de texto que representa la solución del sistema en términos de variables básicas y libres.
     """
         n, m = len(self.matriz), len(self.matriz[0]) - 1
-        pivotes = [-1] * m # Lista para almacenar las columnas de los pivotes
+        pivotes = [-1] * m  # Lista para almacenar las columnas de los pivotes
         variables_libres = []
-        
+
         for i in range(n):
             for j in range(m):
                 if self.matriz[i][j] == 1 and all(self.matriz[k][j] == 0 for k in range(n) if k != i):
                     pivotes[j] = i
                     break
-                
-        #Constructor del string de la solucion
+
+        # Constructor del string de la solucion
         resultado = "Solucion del sistema:\n"
         soluciones = {}
-        
+
         for j in range(m):
             if pivotes[j] == -1:
                 variables_libres.append(f"x{j + 1}")
@@ -182,16 +177,20 @@ class Matriz:
             else:
                 fila = pivotes[j]
                 ecuacion = f"x{j + 1} = {self.matriz[fila][-1]}"
-                for k in range(j+1, m):
+                for k in range(j + 1, m):
                     if self.matriz[fila][k] != 0:
                         coef = self.matriz[fila][k]
                         if coef < 0:
-                            ecuacion += f" - {-coef}x{k+1}"
+                            ecuacion += f" - {-coef}x{k + 1}"
                         else:
-                            ecuacion += f" + {coef}x{k+1}"
+                            ecuacion += f" + {coef}x{k + 1}"
                 soluciones[f"x{j + 1}"] = ecuacion
-        
+
         for var, expr, in soluciones.items():
             resultado += f"{expr}\n"
-            
+
         return resultado
+
+    def calcular_result(self):
+        self.eliminacion_gaussiana()
+        return self.interpretar_resultado()
