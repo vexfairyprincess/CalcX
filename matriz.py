@@ -41,10 +41,7 @@ class Matriz:
             Lista de widgets Entry de Tkinter que contienen los valores de la matriz ingresados por el usuario.
         """
         self.n = n  # Número de ecuaciones
-        self.matriz = []  # Inicialización de la matriz como una lista vacía
-        if entradas:
-            # Si se proporcionan entradas, obtener los valores de la matriz de ellas
-            self.matriz = self.obtener_matriz(entradas)
+        self.matriz = self.obtener_matriz(entradas)
 
     def obtener_matriz(self, entradas):
         """
@@ -96,7 +93,7 @@ class Matriz:
         texto = f"Paso {paso} ({operacion}):\n"  # Encabezado con el número del paso y la operación realizada
         for fila in self.matriz:
             # Formatear cada valor de la fila a 8 caracteres de ancho y 4 decimales de precisión
-            texto += "  ".join(f"{valor:.2f}" if valor != 0 else "0.00" for valor in fila) + "\n"
+           texto += "  ".join(f"{int(valor) if isinstance(valor, float) and valor.is_integer() else valor:.2f}" for valor in fila) + "\n"
         texto += "\n"
         return texto
 
@@ -114,36 +111,48 @@ class Matriz:
 
         paso = 1
         resultado = ""
+        
+        filas, columnas = len(self.matriz), len(self.matriz[0])
+        fila_actual = 0
 
-        for i in range(self.n):
-            # Manejar pivote cero
-            if self.matriz[i][i] == 0:
-                for j in range(i + 1, self.n):
-                    if self.matriz[j][i] != 0:
-                        self.matriz[i], self.matriz[j] = self.matriz[j], self.matriz[i]
-                        resultado += self.imprimir_matriz(paso, f"f{i + 1} <-> f{j + 1}")
-                        paso += 1
-                        break
+        for col in range(columnas - 1):
+            if fila_actual >= filas:
+                break
 
-            # Si después de intentar intercambiar sigue siendo cero, continua al siguiente paso
-            if self.matriz[i][i] == 0:
+            # Encontrar el pivote no nulo más grande para reducir errores numéricos
+            max_row = max(range(fila_actual, filas), key=lambda i: abs(self.matriz[i][col]))
+            if abs(self.matriz[max_row][col]) < 1e-10:
+                continue  # Saltar si el mejor pivote es cercano a cero
+
+            # Intercambiar la fila actual con la fila del pivote máximo encontrado
+            if fila_actual != max_row:
+                self.matriz[fila_actual], self.matriz[max_row] = self.matriz[max_row], self.matriz[fila_actual]
+                resultado += self.imprimir_matriz(paso, f"Intercambio f{fila_actual + 1} <-> f{max_row + 1}")
+                paso += 1
+
+            pivote = self.matriz[fila_actual][col]
+
+            # Si el pivote sigue siendo cercano a cero, pasamos al siguiente paso
+            if abs(pivote) < 1e-10:
                 continue
 
-            # Normalizar fila i para que el pivote sea 1
-            pivote = self.matriz[i][i]
-            self.matriz[i] = [x / pivote for x in self.matriz[i]]
-            resultado += self.imprimir_matriz(paso, f"f{i + 1} -> (1/{pivote:.2f}) * f{i + 1}")
+            # Dividir toda la fila por el pivote para hacer que el pivote sea 1
+            self.matriz[fila_actual] = [elemento / pivote for elemento in self.matriz[fila_actual]]
+            resultado += self.imprimir_matriz(paso, f"f{fila_actual + 1} -> (1/{pivote:.2f}) * f{fila_actual + 1}")
             paso += 1
 
-            # Eliminar todos los otros elementos en la columna i
-            for j in range(self.n):
-                if i != j:
-                    factor = self.matriz[j][i]
-                    self.matriz[j] = [self.matriz[j][k] - factor * self.matriz[i][k] for k in
-                                      range(len(self.matriz[0]))]
-                    resultado += self.imprimir_matriz(paso, f"f{j + 1} -> f{j + 1} - {factor:.2f} * f{i + 1}")
-                    paso += 1
+            # Hacer ceros en todas las demás filas en la columna del pivote
+            for i in range(filas):
+                if i != fila_actual:
+                    factor = self.matriz[i][col]
+                    if abs(factor) > 1e-10:  # Solo restar si el factor es significativo
+                        self.matriz[i] = [self.matriz[i][k] - factor * self.matriz[fila_actual][k] for k in range(columnas)]
+                        resultado += self.imprimir_matriz(paso, f"f{i + 1} -> f{i + 1} - ({factor:.2f}) * f{fila_actual + 1}")
+                        paso += 1
 
+            fila_actual += 1
+
+        # Interpretar y presentar la solución
         resultado += self.interpretar_resultado()
         return resultado
 
@@ -158,36 +167,63 @@ class Matriz:
     """
         n, m = len(self.matriz), len(self.matriz[0]) - 1
         pivotes = [-1] * m  # Lista para almacenar las columnas de los pivotes
-        variables_libres = []
-
-        for i in range(n):
-            for j in range(m):
-                if self.matriz[i][j] == 1 and all(self.matriz[k][j] == 0 for k in range(n) if k != i):
-                    pivotes[j] = i
-                    break
-
-        # Constructor del string de la solucion
         resultado = "Solucion del sistema:\n"
         soluciones = {}
 
         for j in range(m):
-            if pivotes[j] == -1:
-                variables_libres.append(f"x{j + 1}")
-                soluciones[f"x{j + 1}"] = f"x{j + 1} es libre"
+            for i in range(n):
+                if abs(self.matriz[i][j] - 1) < 1e-10 and all(abs(self.matriz[k][j]) < 1e-10 for k in range(n) if k != i):
+                    pivotes[j] = i
+                    break
+                
+        # Revisar si hay una fila inconsistente (0 = b, donde b != 0)
+        fila_inconsistente = [i for i, fila in enumerate(self.matriz) if all(abs(val) < 1e-10 for val in fila[:-1]) and abs(fila[-1]) > 1e-10]
+        inconsistente_var = set(f"x{i + 1}" for i in fila_inconsistente)
+
+
+        # Generar expresiones para las variables y almacenar en el orden correcto
+        for j in range(m):
+            var_name = f"x{j + 1}"
+            if var_name in inconsistente_var:
+                soluciones[var_name] = f"{var_name} es inconsistente"
+            elif pivotes[j] == -1:
+                soluciones[var_name] = f"{var_name} es libre"
             else:
                 fila = pivotes[j]
-                ecuacion = f"x{j + 1} = {self.matriz[fila][-1]}"
-                for k in range(j + 1, m):
-                    if self.matriz[fila][k] != 0:
-                        coef = self.matriz[fila][k]
-                        if coef < 0:
-                            ecuacion += f" - {-coef}x{k + 1}"
-                        else:
-                            ecuacion += f" + {coef}x{k + 1}"
-                soluciones[f"x{j + 1}"] = ecuacion
+                constante = self.matriz[fila][-1]
+                constante_str = f"{int(constante)}" if constante.is_integer() else f"{constante:.2f}" if abs(constante) > 1e-10 else ""
 
-        for var, expr, in soluciones.items():
-            resultado += f"{expr}\n"
+                terminos = []
+                for k in range(m):
+                    if k != j and abs(self.matriz[fila][k]) > 1e-10:
+                        coef = -self.matriz[fila][k]
+                        coef_str = "" if abs(coef - 1) < 1e-10 else f"{int(coef)}" if coef.is_integer() else f"{coef:.2f}"
+                        terminos.append(f"{coef_str}x{k + 1}")
+
+                ecuacion = constante_str
+                for termino in terminos:
+                    if ecuacion and not ecuacion.startswith("-") and constante_str:
+                        ecuacion += " + " if not termino.startswith("-") else " "
+                    ecuacion += termino
+
+                ecuacion = ecuacion.strip()
+                if ecuacion.startswith("0 "):
+                    ecuacion = ecuacion[2:]
+                soluciones[var_name] = f"{var_name} = {ecuacion}".strip()
+
+        # Mostrar las soluciones en orden
+        for i in range(m):
+            var_name = f"x{i + 1}"
+            if var_name in soluciones:
+                resultado += f"{soluciones[var_name]}\n"
+
+        # Determinación de tipo de solución
+        if inconsistente_var:
+            resultado += "El sistema es inconsistente y no tiene soluciones.\n"
+        elif any(pivote == -1 for pivote in pivotes):
+            resultado += "Hay infinitas soluciones debido a variables libres.\n"
+        else:
+            resultado += "La solución es única.\n"
 
         return resultado
 
