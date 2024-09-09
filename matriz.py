@@ -161,28 +161,31 @@ class Matriz:
 
     def interpretar_resultado(self):
         """
-    Interpreta la matriz reducida para expresar las soluciones en términos de variables básicas y libres.
+        Interpreta la matriz reducida para expresar las soluciones en términos de variables básicas y libres.
 
-    Retorna:
-    --------
-    str
-        Cadena de texto que representa la solución del sistema en términos de variables básicas y libres.
-    """
+        Retorna:
+        --------
+        str
+            Cadena de texto que representa la solución del sistema en términos de variables básicas y libres.
+        """
         n, m = len(self.matriz), len(self.matriz[0]) - 1
         pivotes = [-1] * m  # Lista para almacenar las columnas de los pivotes
         resultado = "Solucion del sistema:\n"
         soluciones = {}
 
+        # Identificar las columnas de los pivotes
         for j in range(m):
             for i in range(n):
                 if abs(self.matriz[i][j] - 1) < 1e-10 and all(abs(self.matriz[k][j]) < 1e-10 for k in range(n) if k != i):
                     pivotes[j] = i
                     break
-                
-        # Revisar si hay una fila inconsistente (0 = b, donde b != 0)
-        fila_inconsistente = [i for i, fila in enumerate(self.matriz) if all(abs(val) < 1e-10 for val in fila[:-1]) and abs(fila[-1]) > 1e-10]
-        inconsistente_var = set(f"x{i + 1}" for i in fila_inconsistente)
 
+        # Revisar si hay una fila inconsistente (0 = b, donde b != 0)
+        fila_inconsistente = [
+            i for i, fila in enumerate(self.matriz)
+            if all(abs(val) < 1e-10 for val in fila[:-1]) and abs(fila[-1]) > 1e-10
+        ]
+        inconsistente_var = set(f"x{i + 1}" for i in fila_inconsistente)
 
         # Generar expresiones para las variables y almacenar en el orden correcto
         for j in range(m):
@@ -194,24 +197,29 @@ class Matriz:
             else:
                 fila = pivotes[j]
                 constante = self.matriz[fila][-1]
-                constante_str = f"{int(constante)}" if constante.is_integer() else f"{constante:.2f}" if abs(constante) > 1e-10 else ""
+                constante_str = (
+                    f"{int(constante)}" if constante.is_integer() else f"{constante:.2f}"
+                    if abs(constante) > 1e-10 else "0"
+                )
 
                 terminos = []
+                # Añadir solo términos con variables libres si el coeficiente es significativo
                 for k in range(m):
-                    if k != j and abs(self.matriz[fila][k]) > 1e-10:
+                    if k != j and pivotes[k] == -1 and abs(self.matriz[fila][k]) > 1e-10:
                         coef = -self.matriz[fila][k]
-                        coef_str = "" if abs(coef - 1) < 1e-10 else f"{int(coef)}" if coef.is_integer() else f"{coef:.2f}"
-                        terminos.append(f"{coef_str}x{k + 1}")
+                        if abs(coef) > 1e-10:
+                            coef_str = (
+                                "" if abs(coef - 1) < 1e-10 else f"{int(coef)}" if coef.is_integer() else f"{coef:.2f}"
+                            )
+                            terminos.append(f"{coef_str}x{k + 1}")
 
-                ecuacion = constante_str
-                for termino in terminos:
-                    if ecuacion and not ecuacion.startswith("-") and constante_str:
-                        ecuacion += " + " if not termino.startswith("-") else " "
-                    ecuacion += termino
-
-                ecuacion = ecuacion.strip()
-                if ecuacion.startswith("0 "):
-                    ecuacion = ecuacion[2:]
+                # Construir la ecuación solo con términos si existen
+                if terminos:
+                    ecuacion = constante_str
+                else:
+                    ecuacion = constante_str + " + " + " + ".join(terminos)
+                
+                # Ajustar impresión final para mostrar solo la constante si no hay otros términos
                 soluciones[var_name] = f"{var_name} = {ecuacion}".strip()
 
         # Mostrar las soluciones en orden

@@ -20,7 +20,7 @@ class MenuAplicacion:
         etiqueta = tk.Label(self.root, text="Seleccione una opción:", font=("Arial", 14))
         etiqueta.grid(row=0, column=1, pady=20, sticky="ew")  # Centrar en la columna 1
 
-        boton_reduccion = tk.Button(self.root, text="Eliminación Gaussiana", font=("Arial", 12),
+        boton_reduccion = tk.Button(self.root, text="Metodo escalonado", font=("Arial", 12),
                                     command=self.abrir_interfaz_gauss)
         boton_reduccion.grid(row=1, column=1, pady=10, sticky="ew")
 
@@ -32,7 +32,7 @@ class MenuAplicacion:
     def abrir_interfaz_gauss(self):
         # Crear nueva ventana para Reducción Gaussiana
         self.ventana_gauss = tk.Toplevel(self.root)
-        self.ventana_gauss.title("Eliminación Gaussiana")
+        self.ventana_gauss.title("Metodo Escalonado")
         self.ventana_gauss.geometry("800x600")
 
         # Añadir barra de menú
