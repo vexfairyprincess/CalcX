@@ -8,6 +8,13 @@ class MenuAplicacion:
         self.root.title("Menú Principal")
         self.root.geometry("800x600")
 
+        #obtener tamaño de pantalla
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        #adjust ventana
+        self.root.geometry(f"{screen_width}x{screen_height}")
+
         # Hacer que las columnas se expandan para centrar el contenido
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
@@ -15,25 +22,55 @@ class MenuAplicacion:
 
         self.crear_menu()
 
+    def crear_logo(self):
+        # Crear un frame para contener el logo y el título juntos
+        frame_logo = tk.Frame(self.root)
+        frame_logo.grid(row=0, column=0, columnspan=3, pady=20)  # Usar columnspan para centrar el frame
+
+        # Ruta al archivo GIF
+        self.logo_path = "calculadora_finalfinalGIF.gif"
+        self.logo = tk.PhotoImage(file=self.logo_path)
+
+        # Widget para mostrar el logo
+        label_logo = tk.Label(frame_logo, image=self.logo)
+        label_logo.image = self.logo  # Mantener la referencia a la imagen para evitar que se elimine
+        label_logo.grid(row=0, column=0, padx=20)  # Logo con padding horizontal
+
+        # Generar nombre
+        label_nombre = tk.Label(frame_logo, text="CalcX", font=("Helvetica", 36, "bold"))
+        label_nombre.grid(row=0, column=1, padx=10)
+
+        # Configuración del grid principal
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_columnconfigure(2, weight=1)
+
+
     def crear_menu(self):
         # Etiqueta del menú
+
+        self.crear_logo()
         etiqueta = tk.Label(self.root, text="Seleccione una opción:", font=("Arial", 14))
-        etiqueta.grid(row=0, column=1, pady=20, sticky="ew")  # Centrar en la columna 1
+        etiqueta.grid(row=2, column=1, pady=20, sticky="ew")  # Centrar en la columna 1
 
         boton_reduccion = tk.Button(self.root, text="Metodo escalonado", font=("Arial", 12),
                                     command=self.abrir_interfaz_gauss)
-        boton_reduccion.grid(row=1, column=1, pady=10, sticky="ew")
+        boton_reduccion.grid(row=4, column=1, pady=10, sticky="ew")
 
         boton_salir = tk.Button(self.root, text="Salir", font=("Arial", 12), command=self.root.quit)
-        boton_salir.grid(row=2, column=1, pady=10, sticky="ew")
+        boton_salir.grid(row=6, column=1, pady=10, sticky="ew")
 
         self.root.mainloop()
 
     def abrir_interfaz_gauss(self):
+        self.root.withdraw()
         # Crear nueva ventana para Reducción Gaussiana
         self.ventana_gauss = tk.Toplevel(self.root)
         self.ventana_gauss.title("Metodo Escalonado")
         self.ventana_gauss.geometry("800x600")
+        screen_width = self.ventana_gauss.winfo_screenwidth()
+        screen_height = self.ventana_gauss.winfo_screenheight()
+        self.ventana_gauss.geometry(f"{screen_width}x{screen_height}")
 
         # Añadir barra de menú
         menubar = tk.Menu(self.ventana_gauss)
@@ -42,7 +79,7 @@ class MenuAplicacion:
         # Menú Archivo
         archivo_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="| | |", menu=archivo_menu)
-        archivo_menu.add_command(label="Regresar al menú", command=self.ventana_gauss.destroy)
+        archivo_menu.add_command(label="Regresar al menú", command=self.root.deiconify)
         archivo_menu.add_separator()
         archivo_menu.add_command(label="Salir", command=self.root.quit)
 
@@ -136,10 +173,16 @@ class MenuAplicacion:
             self.boton_paso_a_paso = tk.Button(self.ventana_gauss, text = "Paso a Paso", bg="light yellow",
                                             command=lambda: self.mostrar_paso_a_paso(resultado_pasos))
             self.boton_paso_a_paso.grid(row=3, column=3, padx=10, pady=10)
+
             
     def mostrar_paso_a_paso(self, resultado_pasos):
         self.text_resultado.delete("1.0", tk.END)
         self.text_resultado.insert(tk.END, resultado_pasos)
+
+        #regresar a resultado final, unico proposito: estetica
+        self.boton_regresar = tk.Button(self.ventana_gauss, text="←", font=("Helvetica", 15), bg="light yellow",
+                                        command= self.mostrar_resultado)
+        self.boton_regresar.grid(row=3, column=1, padx=0, pady=0)
 
 
 def iniciar_menu():
