@@ -134,7 +134,7 @@ class MenuAplicacion:
             self.text_resultado.insert(tk.END, resultado_final)
             
             self.boton_paso_a_paso = tk.Button(self.ventana_gauss, text = "Paso a Paso", bg="light yellow",
-                                               command=lambda: self.mostrar_paso_a_paso(resultado_pasos))
+                                            command=lambda: self.mostrar_paso_a_paso(resultado_pasos))
             self.boton_paso_a_paso.grid(row=3, column=3, padx=10, pady=10)
             
     def mostrar_paso_a_paso(self, resultado_pasos):
