@@ -153,14 +153,14 @@ class Matriz:
 
         # Determina el tipo de solución
         if inconsistente_var:
-            resultado += "El sistema es inconsistente y no tiene soluciones.\n"
+            resultado += "\nEl sistema es inconsistente y no tiene soluciones.\n"
         elif any(pivote == -1 for pivote in pivotes):
-            resultado += "Hay infinitas soluciones debido a variables libres.\n"
+            resultado += "\nHay infinitas soluciones debido a variables libres.\n"
         else:
-            resultado += "La solución es única.\n"
+            resultado += "\nLa solución es única.\n"
 
         # Añade una línea indicando las columnas pivote
-        resultado += f"Las columnas pivote son: {', '.join(map(str, columnas_pivote))}.\n"
+        resultado += f"\nLas columnas pivote son: {', '.join(map(str, columnas_pivote))}.\n"
 
         return resultado
     def calcular_result(self):
