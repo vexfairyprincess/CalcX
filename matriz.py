@@ -1,5 +1,4 @@
-import tkinter as tk
-from tkinter import messagebox
+# matriz.py (modificado)
 
 class Matriz:
     """Clase que representa una matriz y permite realizar eliminación Gaussiana."""
@@ -10,19 +9,11 @@ class Matriz:
         self.matriz = self.obtener_matriz(entradas)  # Obtener la matriz desde las entradas
 
     def obtener_matriz(self, entradas):
-        """Convierte las entradas de la interfaz gráfica en una matriz (lista de listas)."""
-        matriz = []
-        num_columnas = len(entradas[0])  # Número de columnas en la matriz
-        for i in range(self.n):  # Itera sobre cada fila
-            fila = []
-            for j in range(num_columnas):  # Itera sobre cada columna
-                try:
-                    valor = float(entradas[i][j].get())  # Convierte el valor a float
-                except ValueError:
-                    messagebox.showerror("Error", f"Introduce un número válido en la posición [{i + 1}, {j + 1}].")
-                    return None  # Retorna None si hay un error en la conversión
-                fila.append(valor)  # Agrega el valor a la fila
-            matriz.append(fila)  # Agrega la fila completa a la matriz
+        """Convierte las entradas (listas de listas de floats) en una matriz."""
+        try:
+            matriz = [[float(valor) for valor in fila] for fila in entradas]
+        except ValueError:
+            raise ValueError("Introduce un número válido en la matriz.")
         return matriz
 
     def imprimir_matriz(self, paso, operacion):
@@ -163,7 +154,3 @@ class Matriz:
         resultado += f"\nLas columnas pivote son: {', '.join(map(str, columnas_pivote))}.\n"
 
         return resultado
-    def calcular_result(self):
-        """Calcula y retorna el resultado del sistema."""
-        self.eliminacion_gaussiana()
-        return self.interpretar_resultado()

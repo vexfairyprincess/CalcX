@@ -1,320 +1,613 @@
-import tkinter as tk
+# Código Principal (menu.py combinado con interfaz para operaciones vectoriales y método escalonado)
+
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
+    QTextEdit, QMessageBox, QGridLayout, QTableWidget, QTableWidgetItem, QSpacerItem, QSizePolicy, QFrame, QComboBox,
+    QScrollArea
+)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from matriz import Matriz
 from vector import Vector
-from tkinter import messagebox
+import sys
 
-class MenuAplicacion:
+class MenuAplicacion(QMainWindow):
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Menú Principal")
-        self.root.geometry("800x600")
+        super().__init__()
+        self.setWindowTitle("Menú Principal")
+        self.setGeometry(100, 100, 800, 600)
+        
+        # Widget principal
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.layout = QVBoxLayout()
+        self.main_widget.setLayout(self.layout)
 
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
+        # Menú principal
+        self.crear_menu_principal()
 
-        self.root.geometry(f"{screen_width}x{screen_height}")
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_columnconfigure(2, weight=1)
+    def crear_menu_principal(self):
+        # Limpiar el layout actual
+        self.limpiar_layout(self.layout)
 
-        self.crear_menu()
+        # Título
+        self.label_titulo = QLabel("Menú Principal", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;")
+        self.layout.addWidget(self.label_titulo)
 
-    def crear_logo(self):
-        frame_logo = tk.Frame(self.root)
-        frame_logo.grid(row=0, column=0, columnspan=3, pady=20)
+        # Botón para el método escalonado
+        self.boton_escalonado = QPushButton("Método Escalonado", self)
+        self.boton_escalonado.clicked.connect(self.abrir_metodo_escalonado)
+        self.layout.addWidget(self.boton_escalonado)
 
-        self.logo_path = "calculadora_finalfinalGIF.gif"
-        self.logo = tk.PhotoImage(file=self.logo_path)
+        # Botón para operaciones combinadas de vectores
+        self.boton_vectorial = QPushButton("Operaciones Combinadas de Vectores", self)
+        self.boton_vectorial.clicked.connect(self.abrir_operaciones_vectoriales_combinadas)
+        self.layout.addWidget(self.boton_vectorial)
 
-        label_logo = tk.Label(frame_logo, image=self.logo)
-        label_logo.image = self.logo
-        label_logo.grid(row=0, column=0, padx=20)
+        # Botón para multiplicación de vector fila por vector columna
+        self.boton_producto_vectorial = QPushButton("Multiplicación Vector Fila x Columna", self)
+        self.boton_producto_vectorial.clicked.connect(self.abrir_producto_vectorial)
+        self.layout.addWidget(self.boton_producto_vectorial)
 
-        label_nombre = tk.Label(frame_logo, text="CalcX", font=("Helvetica", 36, "bold"))
-        label_nombre.grid(row=0, column=1, padx=10)
+        # Espaciador
+        self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_columnconfigure(2, weight=1)
+        # Botón para salir
+        self.boton_salir = QPushButton("Salir", self)
+        self.boton_salir.clicked.connect(self.close)
+        self.layout.addWidget(self.boton_salir)
 
-    def crear_menu(self):
-        self.crear_logo()
-        etiqueta = tk.Label(self.root, text="Seleccione una opción:", font=("Arial", 14))
-        etiqueta.grid(row=2, column=1, pady=20, sticky="ew")
+    def abrir_metodo_escalonado(self):
+        self.ventana_escalonado = VentanaEscalonado()
+        self.ventana_escalonado.show()
+        self.close()
 
-        boton_reduccion = tk.Button(self.root, text="Método escalonado", font=("Arial", 12),
-                                    command=self.abrir_interfaz_gauss)
-        boton_reduccion.grid(row=4, column=1, pady=10, sticky="ew")
+    def abrir_operaciones_vectoriales_combinadas(self):
+        self.ventana_operaciones_combinadas = VentanaOperacionesCombinadas()
+        self.ventana_operaciones_combinadas.show()
+        self.close()
 
-        boton_vectores = tk.Button(self.root, text="Operaciones Vectoriales", font=("Arial", 12),
-                                   command=self.abrir_operaciones_vectoriales)
-        boton_vectores.grid(row=5, column=1, pady=10, sticky="ew")
+    def abrir_producto_vectorial(self):
+        self.ventana_producto_vectorial = VentanaProductoVectorial()
+        self.ventana_producto_vectorial.show()
+        self.close()
 
-        boton_salir = tk.Button(self.root, text="Salir", font=("Arial", 12), command=self.root.quit)
-        boton_salir.grid(row=6, column=1, pady=10, sticky="ew")
+    def limpiar_layout(self, layout):
+        """Elimina todos los widgets del layout dado."""
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
-        self.root.mainloop()
 
-    def abrir_interfaz_gauss(self):
-        self.root.withdraw()
-        # Crear nueva ventana para Reducción Gaussiana
-        self.ventana_gauss = tk.Toplevel(self.root)
-        self.ventana_gauss.title("Metodo Escalonado")
-        self.ventana_gauss.geometry("800x600")
-        screen_width = self.ventana_gauss.winfo_screenwidth()
-        screen_height = self.ventana_gauss.winfo_screenheight()
-        self.ventana_gauss.geometry(f"{screen_width}x{screen_height}")
+class VentanaEscalonado(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Método Escalonado")
+        self.setGeometry(100, 100, 1200, 700)  # Ajustar tamaño de ventana para más espacio
+        
+        # Layout Principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
 
-        # Añadir barra de menú
-        menubar = tk.Menu(self.ventana_gauss)
-        self.ventana_gauss.config(menu=menubar)
+        # Título
+        self.label_titulo = QLabel("Método Escalonado - Eliminación Gaussiana", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 20px; font-weight: bold; margin-bottom: 20px;")
+        self.layout.addWidget(self.label_titulo)
 
-        # Menú Archivo
-        archivo_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="| | |", menu=archivo_menu)
-        archivo_menu.add_command(label="Regresar al menú", command=self.root.deiconify)
-        archivo_menu.add_separator()
-        archivo_menu.add_command(label="Salir", command=self.root.quit)
+        # Layout de Entrada de Datos
+        self.layout_entrada = QHBoxLayout()
+        self.layout.addLayout(self.layout_entrada)
 
-        # Configurar las columnas para que se expandan
-        for i in range(5):
-            self.ventana_gauss.grid_columnconfigure(i, weight=1)
+        # Entrada para el número de ecuaciones
+        self.label_ecuaciones = QLabel("Ecuaciones:", self)
+        self.layout_entrada.addWidget(self.label_ecuaciones)
+        self.input_ecuaciones = QLineEdit(self)
+        self.input_ecuaciones.setFixedWidth(50)  # Reducir ancho
+        self.layout_entrada.addWidget(self.input_ecuaciones)
 
-        frame_configuracion = tk.Frame(self.ventana_gauss)
-        frame_configuracion.grid(row=0, column=0, columnspan=5, pady=10, sticky="ew")
+        # Entrada para el número de variables
+        self.label_variables = QLabel("Variables:", self)
+        self.layout_entrada.addWidget(self.label_variables)
+        self.input_variables = QLineEdit(self)
+        self.input_variables.setFixedWidth(50)  # Reducir ancho
+        self.layout_entrada.addWidget(self.input_variables)
 
-        etiqueta_n = tk.Label(frame_configuracion, text="Número de ecuaciones:")
-        etiqueta_n.grid(row=0, column=0, sticky="e")
+        # Botón para crear la matriz
+        self.boton_crear_matriz = QPushButton("Crear Matriz", self)
+        self.boton_crear_matriz.setFixedWidth(120)  # Reducir ancho del botón
+        self.boton_crear_matriz.clicked.connect(self.crear_matriz)
+        self.layout_entrada.addWidget(self.boton_crear_matriz)
 
-        self.entrada_n = tk.Entry(frame_configuracion, width=5)
-        self.entrada_n.grid(row=0, column=1, sticky="w")
-        self.entrada_n.insert(0, "3")
+        # Espaciador
+        self.layout_entrada.addStretch()
 
-        etiqueta_variables = tk.Label(frame_configuracion, text="Número de variables:")
-        etiqueta_variables.grid(row=0, column=2, sticky="e")
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout_entrada.addWidget(self.boton_regresar)
 
-        self.entrada_variables = tk.Entry(frame_configuracion, width=5)
-        self.entrada_variables.grid(row=0, column=3, sticky="w")
-        self.entrada_variables.insert(0, "3")
+        # Layout para tabla y resultados
+        self.layout_matriz_resultado = QHBoxLayout()
+        self.layout.addLayout(self.layout_matriz_resultado)
 
-        boton_crear = tk.Button(frame_configuracion, text="Crear Matriz", command=self.crear_entradas_matriz)
-        boton_crear.grid(row=0, column=4, padx=10, sticky="w")
+        # Área de tabla para mostrar la matriz
+        self.tabla_matriz = QTableWidget(self)
+        self.tabla_matriz.setFixedWidth(400)  # Establecer ancho fijo para la tabla
+        self.layout_matriz_resultado.addWidget(self.tabla_matriz)
 
-        # Asegurarse de que el frame esté centrado dentro de la ventana
-        frame_configuracion.grid_columnconfigure(0, weight=1)
-        frame_configuracion.grid_columnconfigure(1, weight=1)
-        frame_configuracion.grid_columnconfigure(2, weight=1)
-        frame_configuracion.grid_columnconfigure(3, weight=1)
-        frame_configuracion.grid_columnconfigure(4, weight=1)
+        # Espaciador
+        self.layout_matriz_resultado.addStretch()
 
-        # Entradas para la matriz
-        self.frame_matriz = tk.Frame(self.ventana_gauss)
-        self.frame_matriz.grid(row=1, column=1, columnspan=3, pady=10)  # Centramos las entradas en las columnas 1 a 3
-
-        self.etiqueta_titulo_matriz = tk.Label(self.ventana_gauss, text="Introduce los coeficientes de la matriz:")
-        self.etiqueta_titulo_matriz.grid(row=2, column=0, columnspan=5, sticky="ew")
+        # Área de resultados con estilo mejorado
+        self.frame_resultado = QFrame(self)
+        self.frame_resultado.setStyleSheet("""
+            QFrame {
+                border: 2px solid #B0BEC5;
+                border-radius: 5px;
+                background-color: #ECEFF1;
+                padding: 10px;
+                margin-top: 20px;
+            }
+        """)
+        self.frame_resultado.setLayout(QVBoxLayout())
+        self.texto_resultado = QTextEdit(self.frame_resultado)
+        self.texto_resultado.setFont(QFont("Arial", 12))
+        self.texto_resultado.setStyleSheet("background-color: #FAFAFA;")
+        self.texto_resultado.setFixedHeight(450)  # Aumentar la altura del área de texto
+        self.texto_resultado.setFixedWidth(600)  # Aumentar el ancho del área de texto
+        self.frame_resultado.layout().addWidget(self.texto_resultado)
+        self.layout_matriz_resultado.addWidget(self.frame_resultado)
 
         # Botón para calcular
-        self.boton_calcular = None
+        self.boton_calcular = QPushButton("Calcular", self)
+        self.boton_calcular.setFixedWidth(150)  # Reducir ancho del botón
+        self.boton_calcular.clicked.connect(self.calcular_escalonado)
+        self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
 
-        # Área de texto para el resultado
-        self.text_resultado = tk.Text(self.ventana_gauss, height=10, width=50)
-        self.text_resultado.grid(row=4, column=1, columnspan=3, pady=5, sticky="nsew")
+        # Botón para mostrar paso a paso
+        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso", self)
+        self.boton_paso_a_paso.setFixedWidth(200)  # Aumentar ancho del botón
+        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
+        self.boton_paso_a_paso.hide()  # Ocultar inicialmente
+        self.layout.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
 
-        # Permitir que la columna 4 se expanda para centrar el texto
-        self.ventana_gauss.grid_rowconfigure(4, weight=1)
+        # Variable para almacenar los pasos
+        self.resultado_pasos = ""
+        self.resultado_final = ""
+        self.modo_paso_a_paso = False  # Variable para controlar el modo
+
+    def crear_matriz(self):
+        try:
+            n = int(self.input_ecuaciones.text())
+            m = int(self.input_variables.text())
+            if n <= 0 or m <= 0:
+                raise ValueError("El número de ecuaciones y variables debe ser positivo.")
+            
+            # Crear la tabla con n filas y m+1 columnas
+            self.tabla_matriz.setRowCount(n)
+            self.tabla_matriz.setColumnCount(m + 1)
+            self.tabla_matriz.setHorizontalHeaderLabels([f"x{i+1}" for i in range(m)] + ["Resultado"])
+        
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+    
+    def calcular_escalonado(self):
+        try:
+            n = self.tabla_matriz.rowCount()
+            m = self.tabla_matriz.columnCount() - 1
+            if n == 0 or m == 0:
+                raise ValueError("Primero crea la matriz.")
+
+            entradas = []
+            for i in range(n):
+                fila = []
+                for j in range(m + 1):
+                    item = self.tabla_matriz.item(i, j)
+                    if item is None or not item.text():
+                        raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}).")
+                    valor = float(item.text())
+                    fila.append(valor)
+                entradas.append(fila)
+
+            # Calcular el método escalonado
+            matriz = Matriz(n, entradas)  # Modificar para aceptar entradas directas
+            self.resultado_pasos = matriz.eliminacion_gaussiana()  # Guardar pasos para mostrar luego
+            self.resultado_final = matriz.interpretar_resultado()  # Guardar resultado final
+            
+            # Mostrar resultado simplificado
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+            self.boton_paso_a_paso.show()  # Mostrar el botón para ver los pasos
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def cambiar_modo(self):
+        """Cambia entre mostrar solo el resultado o el paso a paso."""
+        if self.modo_paso_a_paso:
+            # Cambiar a mostrar solo el resultado
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+        else:
+            # Cambiar a mostrar paso a paso
+            self.texto_resultado.setText(self.resultado_pasos)
+            self.boton_paso_a_paso.setText("Mostrar Solo Respuesta")
+        # Alternar el modo
+        self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        """Método para regresar al menú principal."""
-        self.ventana_vectores.destroy()
-        self.root.deiconify()
+        self.main_window = MenuAplicacion()
+        self.main_window.show()
+        self.close()
 
-    def crear_entradas_matriz(self):
-        # Eliminar entradas anteriores si existen
-        for widget in self.frame_matriz.winfo_children():
-            widget.destroy()
+# menu.py (con corrección del layout y estilo de fondo)
 
+class VentanaOperacionesCombinadas(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Operaciones Combinadas de Vectores")
+        self.setGeometry(100, 100, 1200, 700)
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+
+        # Layout Izquierdo para entrada de vectores y escalares
+        self.layout_izquierdo = QVBoxLayout()
+        self.layout.addLayout(self.layout_izquierdo)
+
+        # Layout para Número de Vectores y Dimensión
+        self.layout_entrada = QHBoxLayout()
+        self.layout_izquierdo.addLayout(self.layout_entrada)
+
+        # Número de Vectores
+        self.label_vectores = QLabel("Número de Vectores:", self)
+        self.layout_entrada.addWidget(self.label_vectores)
+        self.input_vectores = QLineEdit(self)
+        self.input_vectores.setFixedWidth(50)
+        self.layout_entrada.addWidget(self.input_vectores)
+
+        # Dimensión de los Vectores
+        self.label_dimension = QLabel("Dimensión de los Vectores:", self)
+        self.layout_entrada.addWidget(self.label_dimension)
+        self.input_dimension = QLineEdit(self)
+        self.input_dimension.setFixedWidth(50)
+        self.layout_entrada.addWidget(self.input_dimension)
+
+        # Botón Crear Entradas
+        self.boton_crear_vectores = QPushButton("Crear Entradas", self)
+        self.boton_crear_vectores.setFixedWidth(150)
+        self.boton_crear_vectores.clicked.connect(self.crear_entradas_vectores)
+        self.layout_entrada.addWidget(self.boton_crear_vectores)
+
+        # Espaciador
+        self.layout_entrada.addStretch()
+
+        # Layout para Tablas de Vectores y Escalares
+        self.layout_tablas = QVBoxLayout()
+        self.layout_izquierdo.addLayout(self.layout_tablas)
+
+        # Tabla para los vectores (más larga y ancha)
+        self.tabla_vectores = QTableWidget(self)
+        self.tabla_vectores.setFixedWidth(350)  # Aumento del ancho para la tabla de vectores
+        self.tabla_vectores.setFixedHeight(250)  # Mantener la altura
+        self.layout_tablas.addWidget(self.tabla_vectores)
+
+        # Tabla para los escalares (más larga y ancha)
+        self.tabla_escalars = QTableWidget(self)
+        self.tabla_escalars.setFixedWidth(350)  # Aumento del ancho para la tabla de escalares
+        self.tabla_escalars.setFixedHeight(200)  # Mantener la altura
+        self.layout_tablas.addWidget(self.tabla_escalars)
+
+        # Botón para calcular operación (más cerca de las tablas)
+        self.boton_calcular = QPushButton("Calcular Operación", self)
+        self.boton_calcular.setFixedWidth(200)
+        self.boton_calcular.clicked.connect(self.calcular_operacion)
+        self.layout_tablas.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+
+        # Área de resultados a la derecha con scroll y estilo mejorado
+        self.layout_resultados = QVBoxLayout()
+        self.layout.addLayout(self.layout_resultados)
+
+        self.label_resultado = QLabel("Resultado de la Operación", self)
+        self.label_resultado.setAlignment(Qt.AlignCenter)
+        self.label_resultado.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        self.layout_resultados.addWidget(self.label_resultado)
+
+        # QScrollArea para contener el frame con los resultados
+        self.scroll_area = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.layout_resultados.addWidget(self.scroll_area)
+
+        # Frame para contener el layout de resultado en formato horizontal
+        self.frame_resultado = QFrame(self)
+        self.frame_resultado.setStyleSheet("""
+            QFrame {
+                border: 2px solid #B0BEC5;
+                border-radius: 5px;
+                background-color: #ECEFF1;
+                padding: 10px;
+                margin-top: 10px;
+            }
+        """)
+        self.scroll_area.setWidget(self.frame_resultado)  # Agregar el frame al scroll area
+
+        # Layout inicial para el frame de resultado
+        self.frame_layout = QHBoxLayout()
+        self.frame_resultado.setLayout(self.frame_layout)
+
+        # Botón para regresar al menú principal, ubicado más abajo y centrado
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def crear_entradas_vectores(self):
         try:
-            n = int(self.entrada_n.get())
-            variables = int(self.entrada_variables.get())
+            numero_vectores = int(self.input_vectores.text())
+            dimension = int(self.input_dimension.text())
 
-            if n <= 0 or variables <= 0:
-                raise ValueError("El número de ecuaciones y variables debe ser mayor a 0.")
+            if numero_vectores <= 0 or dimension <= 0:
+                raise ValueError("El número de vectores y la dimensión deben ser positivos.")
+            
+            # Configurar la tabla de vectores (más grande)
+            self.tabla_vectores.setRowCount(dimension)
+            self.tabla_vectores.setColumnCount(numero_vectores)
+            self.tabla_vectores.setHorizontalHeaderLabels([f"Vector {i+1}" for i in range(numero_vectores)])
+            self.tabla_vectores.setVerticalHeaderLabels([f"Componente {i+1}" for i in range(dimension)])
 
-            # Crear entradas centradas en la matriz
-            self.entradas = [[tk.Entry(self.frame_matriz, width=10) for j in range(variables + 1)] for i in range(n)]
-
-            for i in range(n):
-                for j in range(variables + 1):
-                    self.entradas[i][j].grid(row=i, column=j, padx=10, pady=10, sticky="ns")
-
-            self.etiqueta_titulo_matriz.config(text=f"Introduce los coeficientes de la matriz de {n}x{variables + 1}:")
-
-            # Crear el botón "Calcular" solo después de crear la matriz
-            self.boton_calcular = tk.Button(self.ventana_gauss, text="Calcular", command=self.mostrar_resultado)
-            self.boton_calcular.grid(row=3, column=2, pady=10, sticky="ew")
-
-        except ValueError as ve:
-            messagebox.showerror("Error", f"Error en la entrada: {ve}")
-
-    def mostrar_resultado(self):
-        n = int(self.entrada_n.get())
-        matriz = Matriz(n, self.entradas)  # Crear una instancia de la clase Matriz
+            # Configurar la tabla de escalares (más grande)
+            self.tabla_escalars.setRowCount(numero_vectores)
+            self.tabla_escalars.setColumnCount(1)
+            self.tabla_escalars.setHorizontalHeaderLabels(["Escalar"])
+            self.tabla_escalars.setVerticalHeaderLabels([f"Vector {i+1}" for i in range(numero_vectores)])
         
-        if matriz.matriz is not None:
-            resultado_pasos = matriz.eliminacion_gaussiana()  # Calcular el paso a paso
-            resultado_final = matriz.interpretar_resultado()
-            
-            self.text_resultado.delete("1.0", tk.END)
-            self.text_resultado.insert(tk.END, resultado_final)
-            
-            self.boton_paso_a_paso = tk.Button(self.ventana_gauss, text="Paso a Paso", bg="light yellow",
-                                               command=lambda: self.mostrar_paso_a_paso(resultado_pasos))
-            self.boton_paso_a_paso.grid(row=3, column=3, padx=10, pady=10)
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
 
-    def mostrar_paso_a_paso(self, resultado_pasos):
-        self.text_resultado.delete("1.0", tk.END)
-        self.text_resultado.insert(tk.END, resultado_pasos)
-
-        # Regresar a resultado final, único propósito: estética
-        self.boton_regresar = tk.Button(self.ventana_gauss, text="←", font=("Helvetica", 15), bg="light yellow",
-                                        command=self.mostrar_resultado)
-        self.boton_regresar.grid(row=3, column=1, padx=0, pady=0)
-
-    def abrir_operaciones_vectoriales(self):
-        self.root.withdraw()
-        self.ventana_vectores = tk.Toplevel(self.root)
-        self.ventana_vectores.title("Operaciones Vectoriales")
-        self.ventana_vectores.geometry("800x600")
-        screen_width = self.ventana_vectores.winfo_screenwidth()
-        screen_height = self.ventana_vectores.winfo_screenheight()
-        self.ventana_vectores.geometry(f"{screen_width}x{screen_height}")
-
-        menubar = tk.Menu(self.ventana_vectores)
-        self.ventana_vectores.config(menu=menubar)
-
-        archivo_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="| | |", menu=archivo_menu)
-        archivo_menu.add_command(label="Regresar al menú", command=self.regresar_menu_principal)
-        archivo_menu.add_separator()
-        archivo_menu.add_command(label="Salir", command=self.root.quit)
-
-        # Configurar columnas y filas para que se expandan
-        for i in range(4):
-            self.ventana_vectores.grid_columnconfigure(i, weight=1)
-
-        # Etiqueta y entrada para la dimensión del vector
-        etiqueta_instrucciones = tk.Label(self.ventana_vectores, text="Ingrese la dimensión del vector:", font=("Arial", 14))
-        etiqueta_instrucciones.grid(row=0, column=0, columnspan=2, pady=10, sticky="e")
-
-        self.entrada_dimension = tk.Entry(self.ventana_vectores, width=5)
-        self.entrada_dimension.grid(row=0, column=2, padx=5, sticky="w")
-
-        boton_generar = tk.Button(self.ventana_vectores, text="Generar Entradas", command=self.generar_entradas_vectores)
-        boton_generar.grid(row=0, column=3, padx=10, pady=10, sticky="w")
-
-        # Frame para entradas de vectores y escalares
-        self.frame_entradas = tk.Frame(self.ventana_vectores)
-        self.frame_entradas.grid(row=1, column=0, columnspan=4, pady=20)
-
-        # Configuración de las opciones de operación
-        self.operacion_var = tk.StringVar(value="suma")
-        opciones = [("Suma de vectores", "suma"),
-                    ("Resta de vectores", "resta"),
-                    ("Multiplicación por escalar", "escalar"),
-                    ("Producto escalar", "producto_escalar"),
-                    ("Producto cruz", "producto_cruz")]
-
-        fila_actual = 2
-        for texto, valor in opciones:
-            tk.Radiobutton(self.ventana_vectores, text=texto, variable=self.operacion_var, value=valor).grid(
-                row=fila_actual, column=0, columnspan=2, padx=20, sticky="w")
-            fila_actual += 1
-
-        # Botón para calcular
-        boton_calcular = tk.Button(self.ventana_vectores, text="Calcular", command=self.realizar_operacion)
-        boton_calcular.grid(row=fila_actual, column=1, pady=10, sticky="ew")
-
-        # Área de texto para mostrar el resultado
-        self.text_resultado_vectorial = tk.Text(self.ventana_vectores, height=10, width=70)
-        self.text_resultado_vectorial.grid(row=fila_actual + 1, column=0, columnspan=4, padx=10, pady=10)
-
-    def generar_entradas_vectores(self):
+    def calcular_operacion(self):
         try:
-            dimension = int(self.entrada_dimension.get())
+            numero_vectores = self.tabla_vectores.columnCount()
+            dimension = self.tabla_vectores.rowCount()
+            
+            lista_vectores = []
+            lista_escalars = []
+
+            for i in range(numero_vectores):
+                componentes = []
+                for j in range(dimension):
+                    item = self.tabla_vectores.item(j, i)
+                    if item is None or not item.text():
+                        raise ValueError(f"Introduce un valor válido en la posición Vector {i + 1}, Componente {j + 1}.")
+                    componentes.append(float(item.text()))
+                lista_vectores.append(Vector(componentes))
+
+                # Obtener el escalar correspondiente
+                item_escalar = self.tabla_escalars.item(i, 0)
+                if item_escalar is None or not item_escalar.text():
+                    raise ValueError(f"Introduce un escalar válido para el Vector {i + 1}.")
+                escalar = float(item_escalar.text())
+                lista_escalars.append(escalar)
+
+            # Calcular la suma escalada de los vectores
+            resultado = Vector.suma_escalada(lista_vectores, lista_escalars)
+
+            # Limpiar el layout anterior de manera segura
+            while self.frame_layout.count():
+                child = self.frame_layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+
+            # Formatear la operación en un layout horizontal para mostrarla de izquierda a derecha
+            for escalar, vector in zip(lista_escalars, lista_vectores):
+                # Crear QLabel para el escalar
+                label_escalar = QLabel(f"{escalar} *", self)
+                label_escalar.setAlignment(Qt.AlignCenter)  # Centrar el escalar
+                label_escalar.setStyleSheet("""
+                    font-size: 18px;
+                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    padding: 5px;
+                    border-radius: 5px;
+                """)
+                self.frame_layout.addWidget(label_escalar)
+
+                # Crear QLabel para el vector vertical
+                vector_str = "\n".join([f"[{x}]" for x in vector.componentes])
+                label_vector = QLabel(vector_str, self)
+                label_vector.setAlignment(Qt.AlignCenter)  # Centrar el vector
+                label_vector.setStyleSheet("""
+                    font-size: 18px;
+                    border: 1px solid #B0BEC5;
+                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    padding: 5px;
+                    border-radius: 5px;
+                """)
+                self.frame_layout.addWidget(label_vector)
+
+                # Agregar el símbolo de suma
+                label_suma = QLabel(" + ", self)
+                label_suma.setAlignment(Qt.AlignCenter)  # Centrar el símbolo de suma
+                label_suma.setStyleSheet("""
+                    font-size: 18px;
+                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    padding: 5px;
+                    border-radius: 5px;
+                """)
+                self.frame_layout.addWidget(label_suma)
+
+            # Remover el último símbolo de suma
+            self.frame_layout.takeAt(self.frame_layout.count() - 1)
+
+            # Agregar el símbolo de igual y el resultado
+            label_igual = QLabel(" = ", self)
+            label_igual.setAlignment(Qt.AlignCenter)  # Centrar el símbolo de igual
+            label_igual.setStyleSheet("""
+                font-size: 18px;
+                background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                padding: 5px;
+                border-radius: 5px;
+            """)
+            self.frame_layout.addWidget(label_igual)
+
+            # Crear QLabel para el resultado
+            resultado_str = "\n".join([f"[{x:.2f}]" for x in resultado.componentes])
+            label_resultado = QLabel(resultado_str, self)
+            label_resultado.setAlignment(Qt.AlignCenter)  # Centrar el resultado
+            label_resultado.setStyleSheet("""
+                font-size: 18px;
+                border: 1px solid #B0BEC5;
+                background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                padding: 5px;
+                border-radius: 5px;
+            """)
+            self.frame_layout.addWidget(label_resultado)
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.show()
+        self.close()
+
+class VentanaProductoVectorial(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Multiplicación de Vector Fila x Vector Columna")
+        self.setGeometry(100, 100, 1200, 700)
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+
+        # Layout izquierdo para entrada de dimensión y vectores
+        self.layout_izquierdo = QVBoxLayout()
+        self.layout.addLayout(self.layout_izquierdo)
+
+        # Entrada para la dimensión de los vectores
+        self.layout_dimension = QHBoxLayout()
+        self.layout_izquierdo.addLayout(self.layout_dimension)
+
+        self.label_dimension = QLabel("Dimensión del Vector:", self)
+        self.layout_dimension.addWidget(self.label_dimension)
+        self.input_dimension = QLineEdit(self)
+        self.input_dimension.setPlaceholderText("Ejemplo: 3")
+        self.input_dimension.setFixedWidth(200)
+        self.layout_dimension.addWidget(self.input_dimension)
+
+        self.boton_crear_vectores = QPushButton("Crear Vectores", self)
+        self.boton_crear_vectores.setFixedWidth(150)
+        self.boton_crear_vectores.clicked.connect(self.crear_vectores)
+        self.layout_dimension.addWidget(self.boton_crear_vectores)
+
+        # Área para la tabla de vectores fila y columna
+        self.layout_vectores = QHBoxLayout()
+        self.layout_izquierdo.addLayout(self.layout_vectores)
+
+        # Tabla para el vector fila (más ancha horizontalmente)
+        self.tabla_vector_fila = QTableWidget(self)
+        self.tabla_vector_fila.setFixedWidth(350)  # Ajuste del ancho horizontal
+        self.tabla_vector_fila.setFixedHeight(70)
+        self.tabla_vector_fila.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.layout_vectores.addWidget(self.tabla_vector_fila)
+
+        # Tabla para el vector columna (más ancha horizontalmente)
+        self.tabla_vector_columna = QTableWidget(self)
+        self.tabla_vector_columna.setFixedWidth(190)  # Ajuste del ancho horizontal
+        self.tabla_vector_columna.setFixedHeight(250)
+        self.tabla_vector_columna.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.layout_vectores.addWidget(self.tabla_vector_columna)
+
+        # Botón para calcular el producto escalar
+        self.boton_calcular = QPushButton("Calcular Producto", self)
+        self.boton_calcular.setFixedWidth(200)
+        self.boton_calcular.clicked.connect(self.calcular_producto)
+        self.layout_izquierdo.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+
+        # Layout derecho para resultados
+        self.layout_resultados = QVBoxLayout()
+        self.layout.addLayout(self.layout_resultados)
+
+        self.label_resultado = QLabel("Resultado del Producto Escalar", self)
+        self.label_resultado.setAlignment(Qt.AlignCenter)
+        self.label_resultado.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        self.layout_resultados.addWidget(self.label_resultado)
+
+        # Área de resultados
+        self.area_resultados = QTextEdit(self)
+        self.area_resultados.setFixedHeight(250)
+        self.area_resultados.setReadOnly(True)
+        self.layout_resultados.addWidget(self.area_resultados)
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def crear_vectores(self):
+        try:
+            dimension = int(self.input_dimension.text())
             if dimension <= 0:
                 raise ValueError("La dimensión debe ser un número positivo.")
-            
-            # Limpiar entradas previas si existen
-            for widget in self.frame_entradas.winfo_children():
-                widget.destroy()
 
-            # Entradas para los componentes del vector u
-            tk.Label(self.frame_entradas, text="Componentes de Vector u:", font=("Arial", 12)).grid(row=0, column=0, columnspan=dimension, pady=5)
-            self.entradas_u = [tk.Entry(self.frame_entradas, width=5) for _ in range(dimension)]
-            for i, entrada in enumerate(self.entradas_u):
-                entrada.grid(row=1, column=i, padx=5, pady=5)
+            # Configurar tabla para el vector fila
+            self.tabla_vector_fila.setRowCount(1)
+            self.tabla_vector_fila.setColumnCount(dimension)
+            self.tabla_vector_fila.setHorizontalHeaderLabels([f"Componente {i + 1}" for i in range(dimension)])
+            self.tabla_vector_fila.setVerticalHeaderLabels(["Vector Fila"])
 
-            # Entradas para los componentes del vector v
-            tk.Label(self.frame_entradas, text="Componentes de Vector v:", font=("Arial", 12)).grid(row=2, column=0, columnspan=dimension, pady=5)
-            self.entradas_v = [tk.Entry(self.frame_entradas, width=5) for _ in range(dimension)]
-            for i, entrada in enumerate(self.entradas_v):
-                entrada.grid(row=3, column=i, padx=5, pady=5)
+            # Configurar tabla para el vector columna
+            self.tabla_vector_columna.setRowCount(dimension)
+            self.tabla_vector_columna.setColumnCount(1)
+            self.tabla_vector_columna.setHorizontalHeaderLabels(["Vector Columna"])
+            self.tabla_vector_columna.setVerticalHeaderLabels([f"Componente {i + 1}" for i in range(dimension)])
 
-            # Entradas para los escalares
-            tk.Label(self.frame_entradas, text="Escalar a:", font=("Arial", 12)).grid(row=4, column=0, sticky="e", pady=5)
-            self.entrada_escalar_a = tk.Entry(self.frame_entradas, width=5)
-            self.entrada_escalar_a.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
 
-            tk.Label(self.frame_entradas, text="Escalar b:", font=("Arial", 12)).grid(row=4, column=2, sticky="e", pady=5)
-            self.entrada_escalar_b = tk.Entry(self.frame_entradas, width=5)
-            self.entrada_escalar_b.grid(row=4, column=3, padx=5, pady=5, sticky="w")
-
-        except ValueError as ve:
-            messagebox.showerror("Error", f"Entrada no válida: {ve}")
-
-    def realizar_operacion(self):
+    def calcular_producto(self):
         try:
-            componentes_u = [float(entry.get()) for entry in self.entradas_u]
-            componentes_v = [float(entry.get()) for entry in self.entradas_v]
-            escalar_a = float(self.entrada_escalar_a.get()) if self.entrada_escalar_a.get() else None
-            escalar_b = float(self.entrada_escalar_b.get()) if self.entrada_escalar_b.get() else None
+            dimension = self.tabla_vector_fila.columnCount()
+            vector_fila = []
+            vector_columna = []
 
-            u = Vector(componentes_u)
-            v = Vector(componentes_v)
-            operacion = self.operacion_var.get()
+            # Leer componentes del vector fila
+            for i in range(dimension):
+                item = self.tabla_vector_fila.item(0, i)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor válido en la posición Vector Fila, Componente {i + 1}.")
+                vector_fila.append(float(item.text()))
 
-            resultado = ""
+            # Leer componentes del vector columna
+            for i in range(dimension):
+                item = self.tabla_vector_columna.item(i, 0)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor válido en la posición Vector Columna, Componente {i + 1}.")
+                vector_columna.append(float(item.text()))
 
-            if operacion == "suma":
-                resultado_vector = u.suma(v)
-                resultado = f"u + v = {resultado_vector}"
-            elif operacion == "resta":
-                resultado_vector = u.resta(v)
-                resultado = f"u - v = {resultado_vector}"
-            elif operacion == "escalar":
-                if escalar_a is not None and escalar_b is not None:
-                    resultado_u = u.multiplicacion(escalar_a)
-                    resultado_v = v.multiplicacion(escalar_b)
-                    resultado = f"{escalar_a} * u = {resultado_u}\n{escalar_b} * v = {resultado_v}"
-                else:
-                    raise ValueError("Debe ingresar ambos escalares a y b.")
-            elif operacion == "producto_escalar":
-                resultado_escalar = u.producto_escalar(v)
-                resultado = f"u · v = {resultado_escalar}"
-            elif operacion == "producto_cruz":
-                resultado_vector = u.producto_cruz(v)
-                resultado = f"u × v = {resultado_vector}"
-            else:
-                resultado = "Operación no reconocida."
+            # Realizar el cálculo del producto escalar
+            producto = sum(f * c for f, c in zip(vector_fila, vector_columna))
 
-            self.text_resultado_vectorial.delete("1.0", tk.END)
-            self.text_resultado_vectorial.insert(tk.END, resultado)
+            # Mostrar el resultado en el área de resultados
+            self.area_resultados.clear()
+            resultado_texto = "Producto Escalar:\n\n" + \
+                                "Vector Fila: " + str(vector_fila) + "\n\n" + \
+                                "Vector Columna:\n" + "\n".join([f"[{x}]" for x in vector_columna]) + "\n\n" + \
+                                f"Resultado: {producto:.2f}"
+            self.area_resultados.setText(resultado_texto)
 
-        except ValueError as ve:
-            messagebox.showerror("Error", f"Error en la entrada: {ve}")
-        except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error: {e}")
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.show()
+        self.close()
 
 def iniciar_menu():
-    app = MenuAplicacion()
+    app = QApplication(sys.argv)
+    ventana = MenuAplicacion()
+    ventana.show()
+    sys.exit(app.exec_())
