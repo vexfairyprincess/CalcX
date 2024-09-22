@@ -1,4 +1,4 @@
-# matriz.py (modificado)
+#matriz.py
 
 class Matriz:
     """Clase que representa una matriz y permite realizar eliminación Gaussiana."""

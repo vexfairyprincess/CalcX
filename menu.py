@@ -1,4 +1,4 @@
-# Código Principal (menu.py combinado con interfaz para operaciones vectoriales y método escalonado)
+# menu.py
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
@@ -245,7 +245,6 @@ class VentanaEscalonado(QWidget):
         self.main_window.show()
         self.close()
 
-# menu.py (con corrección del layout y estilo de fondo)
 
 class VentanaOperacionesCombinadas(QWidget):
     def __init__(self):
@@ -290,19 +289,19 @@ class VentanaOperacionesCombinadas(QWidget):
         self.layout_tablas = QVBoxLayout()
         self.layout_izquierdo.addLayout(self.layout_tablas)
 
-        # Tabla para los vectores (más larga y ancha)
+        # Tabla para los vectores
         self.tabla_vectores = QTableWidget(self)
-        self.tabla_vectores.setFixedWidth(350)  # Aumento del ancho para la tabla de vectores
-        self.tabla_vectores.setFixedHeight(250)  # Mantener la altura
+        self.tabla_vectores.setFixedWidth(350)
+        self.tabla_vectores.setFixedHeight(250)
         self.layout_tablas.addWidget(self.tabla_vectores)
 
-        # Tabla para los escalares (más larga y ancha)
+        # Tabla para los escalares
         self.tabla_escalars = QTableWidget(self)
-        self.tabla_escalars.setFixedWidth(350)  # Aumento del ancho para la tabla de escalares
-        self.tabla_escalars.setFixedHeight(200)  # Mantener la altura
+        self.tabla_escalars.setFixedWidth(350)
+        self.tabla_escalars.setFixedHeight(200)
         self.layout_tablas.addWidget(self.tabla_escalars)
 
-        # Botón para calcular operación (más cerca de las tablas)
+        # Botón para calcular operación
         self.boton_calcular = QPushButton("Calcular Operación", self)
         self.boton_calcular.setFixedWidth(200)
         self.boton_calcular.clicked.connect(self.calcular_operacion)
@@ -333,13 +332,13 @@ class VentanaOperacionesCombinadas(QWidget):
                 margin-top: 10px;
             }
         """)
-        self.scroll_area.setWidget(self.frame_resultado)  # Agregar el frame al scroll area
+        self.scroll_area.setWidget(self.frame_resultado)
 
         # Layout inicial para el frame de resultado
         self.frame_layout = QHBoxLayout()
         self.frame_resultado.setLayout(self.frame_layout)
 
-        # Botón para regresar al menú principal, ubicado más abajo y centrado
+        # Botón para regresar al menú principal
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
         self.boton_regresar.setFixedWidth(200)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
@@ -353,13 +352,13 @@ class VentanaOperacionesCombinadas(QWidget):
             if numero_vectores <= 0 or dimension <= 0:
                 raise ValueError("El número de vectores y la dimensión deben ser positivos.")
             
-            # Configurar la tabla de vectores (más grande)
+            # Configurar la tabla de vectores
             self.tabla_vectores.setRowCount(dimension)
             self.tabla_vectores.setColumnCount(numero_vectores)
             self.tabla_vectores.setHorizontalHeaderLabels([f"Vector {i+1}" for i in range(numero_vectores)])
             self.tabla_vectores.setVerticalHeaderLabels([f"Componente {i+1}" for i in range(dimension)])
 
-            # Configurar la tabla de escalares (más grande)
+            # Configurar la tabla de escalares
             self.tabla_escalars.setRowCount(numero_vectores)
             self.tabla_escalars.setColumnCount(1)
             self.tabla_escalars.setHorizontalHeaderLabels(["Escalar"])
@@ -382,8 +381,9 @@ class VentanaOperacionesCombinadas(QWidget):
                     item = self.tabla_vectores.item(j, i)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición Vector {i + 1}, Componente {j + 1}.")
-                    componentes.append(float(item.text()))
-                lista_vectores.append(Vector(componentes))
+                    componentes.append(item.text())
+                vector = Vector.crear_vector_desde_entrada(componentes)
+                lista_vectores.append(vector)
 
                 # Obtener el escalar correspondiente
                 item_escalar = self.tabla_escalars.item(i, 0)
@@ -392,7 +392,7 @@ class VentanaOperacionesCombinadas(QWidget):
                 escalar = float(item_escalar.text())
                 lista_escalars.append(escalar)
 
-            # Calcular la suma escalada de los vectores
+            # Calcular la suma escalada de los vectores utilizando vector.py
             resultado = Vector.suma_escalada(lista_vectores, lista_escalars)
 
             # Limpiar el layout anterior de manera segura
@@ -405,10 +405,10 @@ class VentanaOperacionesCombinadas(QWidget):
             for escalar, vector in zip(lista_escalars, lista_vectores):
                 # Crear QLabel para el escalar
                 label_escalar = QLabel(f"{escalar} *", self)
-                label_escalar.setAlignment(Qt.AlignCenter)  # Centrar el escalar
+                label_escalar.setAlignment(Qt.AlignCenter)
                 label_escalar.setStyleSheet("""
                     font-size: 18px;
-                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    background-color: #FFFFFF;
                     padding: 5px;
                     border-radius: 5px;
                 """)
@@ -417,11 +417,11 @@ class VentanaOperacionesCombinadas(QWidget):
                 # Crear QLabel para el vector vertical
                 vector_str = "\n".join([f"[{x}]" for x in vector.componentes])
                 label_vector = QLabel(vector_str, self)
-                label_vector.setAlignment(Qt.AlignCenter)  # Centrar el vector
+                label_vector.setAlignment(Qt.AlignCenter)
                 label_vector.setStyleSheet("""
                     font-size: 18px;
                     border: 1px solid #B0BEC5;
-                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    background-color: #FFFFFF;
                     padding: 5px;
                     border-radius: 5px;
                 """)
@@ -429,10 +429,10 @@ class VentanaOperacionesCombinadas(QWidget):
 
                 # Agregar el símbolo de suma
                 label_suma = QLabel(" + ", self)
-                label_suma.setAlignment(Qt.AlignCenter)  # Centrar el símbolo de suma
+                label_suma.setAlignment(Qt.AlignCenter)
                 label_suma.setStyleSheet("""
                     font-size: 18px;
-                    background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                    background-color: #FFFFFF;
                     padding: 5px;
                     border-radius: 5px;
                 """)
@@ -443,10 +443,10 @@ class VentanaOperacionesCombinadas(QWidget):
 
             # Agregar el símbolo de igual y el resultado
             label_igual = QLabel(" = ", self)
-            label_igual.setAlignment(Qt.AlignCenter)  # Centrar el símbolo de igual
+            label_igual.setAlignment(Qt.AlignCenter)
             label_igual.setStyleSheet("""
                 font-size: 18px;
-                background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                background-color: #FFFFFF;
                 padding: 5px;
                 border-radius: 5px;
             """)
@@ -455,11 +455,11 @@ class VentanaOperacionesCombinadas(QWidget):
             # Crear QLabel para el resultado
             resultado_str = "\n".join([f"[{x:.2f}]" for x in resultado.componentes])
             label_resultado = QLabel(resultado_str, self)
-            label_resultado.setAlignment(Qt.AlignCenter)  # Centrar el resultado
+            label_resultado.setAlignment(Qt.AlignCenter)
             label_resultado.setStyleSheet("""
                 font-size: 18px;
                 border: 1px solid #B0BEC5;
-                background-color: #FFFFFF;  # Fondo blanco para mejor visibilidad
+                background-color: #FFFFFF;
                 padding: 5px;
                 border-radius: 5px;
             """)
@@ -505,16 +505,16 @@ class VentanaProductoVectorial(QWidget):
         self.layout_vectores = QHBoxLayout()
         self.layout_izquierdo.addLayout(self.layout_vectores)
 
-        # Tabla para el vector fila (más ancha horizontalmente)
+        # Tabla para el vector fila
         self.tabla_vector_fila = QTableWidget(self)
-        self.tabla_vector_fila.setFixedWidth(350)  # Ajuste del ancho horizontal
+        self.tabla_vector_fila.setFixedWidth(350)
         self.tabla_vector_fila.setFixedHeight(70)
         self.tabla_vector_fila.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.layout_vectores.addWidget(self.tabla_vector_fila)
 
-        # Tabla para el vector columna (más ancha horizontalmente)
+        # Tabla para el vector columna
         self.tabla_vector_columna = QTableWidget(self)
-        self.tabla_vector_columna.setFixedWidth(190)  # Ajuste del ancho horizontal
+        self.tabla_vector_columna.setFixedWidth(190)
         self.tabla_vector_columna.setFixedHeight(250)
         self.tabla_vector_columna.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.layout_vectores.addWidget(self.tabla_vector_columna)
@@ -578,23 +578,27 @@ class VentanaProductoVectorial(QWidget):
                 item = self.tabla_vector_fila.item(0, i)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Fila, Componente {i + 1}.")
-                vector_fila.append(float(item.text()))
+                vector_fila.append(item.text())
 
             # Leer componentes del vector columna
             for i in range(dimension):
                 item = self.tabla_vector_columna.item(i, 0)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Columna, Componente {i + 1}.")
-                vector_columna.append(float(item.text()))
+                vector_columna.append(item.text())
 
-            # Realizar el cálculo del producto escalar
-            producto = sum(f * c for f, c in zip(vector_fila, vector_columna))
+            # Crear instancias de Vector utilizando vector.py
+            vector_fila_obj = Vector.crear_vector_desde_entrada(vector_fila)
+            vector_columna_obj = Vector.crear_vector_desde_entrada(vector_columna)
+
+            # Realizar el cálculo del producto escalar utilizando vector.py
+            producto = vector_fila_obj.producto_punto(vector_columna_obj)
 
             # Mostrar el resultado en el área de resultados
             self.area_resultados.clear()
             resultado_texto = "Producto Escalar:\n\n" + \
-                                "Vector Fila: " + str(vector_fila) + "\n\n" + \
-                                "Vector Columna:\n" + "\n".join([f"[{x}]" for x in vector_columna]) + "\n\n" + \
+                                "Vector Fila: " + str(vector_fila_obj.componentes) + "\n\n" + \
+                                "Vector Columna:\n" + "\n".join([f"[{x}]" for x in vector_columna_obj.componentes]) + "\n\n" + \
                                 f"Resultado: {producto:.2f}"
             self.area_resultados.setText(resultado_texto)
 
@@ -610,4 +614,4 @@ def iniciar_menu():
     app = QApplication(sys.argv)
     ventana = MenuAplicacion()
     ventana.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
