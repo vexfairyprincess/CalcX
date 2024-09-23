@@ -619,57 +619,63 @@ class VentanaProductoVectorial(QWidget):
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Multiplicación de Vector Fila x Vector Columna")
-        self.setGeometry(100, 100, 1200, 700)
+        self.setGeometry(100, 100, 1200, 700)  # Tamaño de la ventana principal
         self.tamano_fuente = tamano_fuente
         self.actualizar_fuente_local(self.tamano_fuente)
 
         # Layout principal
-        self.layout = QHBoxLayout()
+        self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        # Layout izquierdo para entrada de dimensión y vectores
-        self.layout_izquierdo = QVBoxLayout()
-        self.layout.addLayout(self.layout_izquierdo)
-
-        # Entrada para la dimensión de los vectores
-        self.layout_dimension = QHBoxLayout()
-        self.layout_izquierdo.addLayout(self.layout_dimension)
+        # Layout superior para entrada de dimensión y creación de vectores
+        self.layout_superior = QHBoxLayout()
+        self.layout.addLayout(self.layout_superior)
 
         self.label_dimension = QLabel("Dimensión del Vector:", self)
-        self.layout_dimension.addWidget(self.label_dimension)
+        self.layout_superior.addWidget(self.label_dimension)
         self.input_dimension = QLineEdit(self)
         self.input_dimension.setPlaceholderText("Ejemplo: 3")
         self.input_dimension.setFixedWidth(200)
-        self.layout_dimension.addWidget(self.input_dimension)
+        self.layout_superior.addWidget(self.input_dimension)
 
         self.boton_crear_vectores = QPushButton("Crear Vectores", self)
         self.boton_crear_vectores.setFixedWidth(150)
         self.boton_crear_vectores.clicked.connect(self.crear_vectores)
-        self.layout_dimension.addWidget(self.boton_crear_vectores)
+        self.layout_superior.addWidget(self.boton_crear_vectores)
 
-        # Área para la tabla de vectores fila y columna
-        self.layout_vectores = QHBoxLayout()
-        self.layout_izquierdo.addLayout(self.layout_vectores)
+        # Layout para las tablas de vectores fila y columna
+        self.layout_vectores = QVBoxLayout()  # Cambiado a QVBoxLayout para apilarlos verticalmente
+        self.layout.addLayout(self.layout_vectores)
 
         # Tabla para el vector fila
         self.tabla_vector_fila = QTableWidget(self)
-        self.tabla_vector_fila.setFixedWidth(350)
-        self.tabla_vector_fila.setFixedHeight(70)
+        self.tabla_vector_fila.setFixedWidth(500)  # Ajuste del tamaño
+        self.tabla_vector_fila.setFixedHeight(70)  # Ajuste del tamaño
         self.tabla_vector_fila.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.layout_vectores.addWidget(self.tabla_vector_fila)
 
         # Tabla para el vector columna
         self.tabla_vector_columna = QTableWidget(self)
-        self.tabla_vector_columna.setFixedWidth(190)
-        self.tabla_vector_columna.setFixedHeight(250)
+        self.tabla_vector_columna.setFixedWidth(200)  # Ajuste del tamaño
+        self.tabla_vector_columna.setFixedHeight(250)  # Ajuste del tamaño
         self.tabla_vector_columna.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.layout_vectores.addWidget(self.tabla_vector_columna)
+
+        # Layout para los botones
+        self.layout_botones = QHBoxLayout()
+        self.layout.addLayout(self.layout_botones)
 
         # Botón para calcular el producto escalar
         self.boton_calcular = QPushButton("Calcular Producto", self)
         self.boton_calcular.setFixedWidth(200)
         self.boton_calcular.clicked.connect(self.calcular_producto)
-        self.layout_izquierdo.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+        self.layout_botones.addWidget(self.boton_calcular, alignment=Qt.AlignLeft)  # Mantiene su posición en X
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(250)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout_botones.addWidget(self.boton_regresar, alignment=Qt.AlignRight)  # Mantiene su posición en X
 
         # Layout derecho para resultados
         self.layout_resultados = QVBoxLayout()
@@ -687,12 +693,6 @@ class VentanaProductoVectorial(QWidget):
         self.area_resultados.setFixedHeight(250)
         self.area_resultados.setReadOnly(True)
         self.layout_resultados.addWidget(self.area_resultados)
-
-        # Botón para regresar al menú principal
-        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
-        self.boton_regresar.setFixedWidth(250)
-        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
-        self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -730,11 +730,19 @@ class VentanaProductoVectorial(QWidget):
             self.tabla_vector_fila.setHorizontalHeaderLabels([f"Componente {i + 1}" for i in range(dimension)])
             self.tabla_vector_fila.setVerticalHeaderLabels(["Vector Fila"])
 
+            # Ajustar tamaño de la tabla de vector fila
+            self.tabla_vector_fila.setFixedWidth(600)  # Aumentar el ancho para mostrar componentes completos
+            self.tabla_vector_fila.setFixedHeight(80)  # Ajustar la altura para que se vea bien
+
             # Configurar tabla para el vector columna
             self.tabla_vector_columna.setRowCount(dimension)
             self.tabla_vector_columna.setColumnCount(1)
             self.tabla_vector_columna.setHorizontalHeaderLabels(["Vector Columna"])
             self.tabla_vector_columna.setVerticalHeaderLabels([f"Componente {i + 1}" for i in range(dimension)])
+
+            # Ajustar tamaño de la tabla de vector columna
+            self.tabla_vector_columna.setFixedWidth(300)  # Ajuste de ancho
+            self.tabla_vector_columna.setFixedHeight(100 + (dimension * 30))  # Ajuste de altura dinámica según dimensión
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
