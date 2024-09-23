@@ -14,18 +14,12 @@ class Vector:
     def __add__(self, otro):
         if not isinstance(otro, Vector):
             raise ValueError("El operando debe ser un Vector.")
-        if len(self.componentes) != len(otro.componentes):
-            raise ValueError("Los vectores deben tener la misma longitud.")
-        suma = [a + b for a, b in zip(self.componentes, otro.componentes)]
-        return Vector(suma)
+        return Vector.suma_escalada([self, otro], [1, 1])
 
     def __sub__(self, otro):
         if not isinstance(otro, Vector):
             raise ValueError("El operando debe ser un Vector.")
-        if len(self.componentes) != len(otro.componentes):
-            raise ValueError("Los vectores deben tener la misma longitud.")
-        resta = [a - b for a, b in zip(self.componentes, otro.componentes)]
-        return Vector(resta)
+        return Vector.suma_escalada([self, otro], [1, -1])
 
     def __mul__(self, escalar):
         if not isinstance(escalar, (int, float)):
@@ -43,34 +37,6 @@ class Vector:
         if len(self.componentes) != len(otro.componentes):
             raise ValueError("Los vectores deben tener la misma longitud.")
         return sum(a * b for a, b in zip(self.componentes, otro.componentes))
-
-    @staticmethod
-    def suma_vectores(lista_vectores):
-        """Suma una lista de vectores."""
-        if not lista_vectores:
-            raise ValueError("La lista de vectores está vacía.")
-        longitud = len(lista_vectores[0].componentes)
-        for vector in lista_vectores:
-            if len(vector.componentes) != longitud:
-                raise ValueError("Todos los vectores deben tener la misma longitud.")
-        suma = [0] * longitud
-        for vector in lista_vectores:
-            suma = [a + b for a, b in zip(suma, vector.componentes)]
-        return Vector(suma)
-
-    @staticmethod
-    def resta_vectores(lista_vectores):
-        """Resta una lista de vectores, comenzando por el primero."""
-        if not lista_vectores:
-            raise ValueError("La lista de vectores está vacía.")
-        longitud = len(lista_vectores[0].componentes)
-        for vector in lista_vectores:
-            if len(vector.componentes) != longitud:
-                raise ValueError("Todos los vectores deben tener la misma longitud.")
-        resta = lista_vectores[0].componentes.copy()
-        for vector in lista_vectores[1:]:
-            resta = [a - b for a, b in zip(resta, vector.componentes)]
-        return Vector(resta)
 
     @staticmethod
     def suma_escalada(lista_vectores, lista_escalars):

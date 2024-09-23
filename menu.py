@@ -2,20 +2,24 @@
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
-    QTextEdit, QMessageBox, QGridLayout, QTableWidget, QTableWidgetItem, QSpacerItem, QSizePolicy, QFrame, QComboBox,
-    QScrollArea
+    QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from matriz import Matriz
 from vector import Vector
 import sys
 
 class MenuAplicacion(QMainWindow):
+    cambiar_fuente_signal = pyqtSignal(int)  # Señal para cambiar el tamaño de fuente global
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Menú Principal")
         self.setGeometry(100, 100, 800, 600)
+        
+        # Fuente base
+        self.tamano_fuente = 14  # Tamaño de fuente inicial
         
         # Widget principal
         self.main_widget = QWidget()
@@ -23,55 +27,103 @@ class MenuAplicacion(QMainWindow):
         self.layout = QVBoxLayout()
         self.main_widget.setLayout(self.layout)
 
+        # Conectar la señal para cambiar fuente
+        self.cambiar_fuente_signal.connect(self.actualizar_fuente_global)
+        
         # Menú principal
         self.crear_menu_principal()
 
     def crear_menu_principal(self):
         # Limpiar el layout actual
         self.limpiar_layout(self.layout)
+        
+        # Establecer estilo
+        self.setStyleSheet("""
+            QPushButton {
+                font-size: 16px;
+                padding: 10px;
+            }
+            QLabel {
+                font-size: 18px;
+            }
+            QLineEdit, QTextEdit, QTableWidget {
+                font-size: 16px;
+            }
+        """)
 
         # Título
         self.label_titulo = QLabel("Menú Principal", self)
         self.label_titulo.setAlignment(Qt.AlignCenter)
-        self.label_titulo.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;")
+        fuente_titulo = QFont()
+        fuente_titulo.setPointSize(28)
+        fuente_titulo.setBold(True)
+        self.label_titulo.setFont(fuente_titulo)
         self.layout.addWidget(self.label_titulo)
 
-        # Botón para el método escalonado
+        # Botones de opciones
         self.boton_escalonado = QPushButton("Método Escalonado", self)
         self.boton_escalonado.clicked.connect(self.abrir_metodo_escalonado)
         self.layout.addWidget(self.boton_escalonado)
 
-        # Botón para operaciones combinadas de vectores
         self.boton_vectorial = QPushButton("Operaciones Combinadas de Vectores", self)
         self.boton_vectorial.clicked.connect(self.abrir_operaciones_vectoriales_combinadas)
         self.layout.addWidget(self.boton_vectorial)
 
-        # Botón para multiplicación de vector fila por vector columna
         self.boton_producto_vectorial = QPushButton("Multiplicación Vector Fila x Columna", self)
         self.boton_producto_vectorial.clicked.connect(self.abrir_producto_vectorial)
         self.layout.addWidget(self.boton_producto_vectorial)
-
+        
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        
+        # Botones para ajustar el tamaño de fuente
+        botones_fuente_layout = QHBoxLayout()
+        self.layout.addLayout(botones_fuente_layout)
 
+        self.boton_aumentar_fuente = QPushButton("Aumentar Tamaño de Fuente", self)
+        self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
+        botones_fuente_layout.addWidget(self.boton_aumentar_fuente)
+
+        self.boton_disminuir_fuente = QPushButton("Disminuir Tamaño de Fuente", self)
+        self.boton_disminuir_fuente.clicked.connect(self.disminuir_tamano_fuente)
+        botones_fuente_layout.addWidget(self.boton_disminuir_fuente)
+        
         # Botón para salir
         self.boton_salir = QPushButton("Salir", self)
         self.boton_salir.clicked.connect(self.close)
         self.layout.addWidget(self.boton_salir)
+        
+    def aumentar_tamano_fuente(self):
+        self.tamano_fuente += 2
+        self.cambiar_fuente_signal.emit(self.tamano_fuente)
 
+    def disminuir_tamano_fuente(self):
+        if self.tamano_fuente > 8:
+            self.tamano_fuente -= 2
+            self.cambiar_fuente_signal.emit(self.tamano_fuente)
+    
+    def actualizar_fuente_global(self, tamano):
+        fuente = QFont()
+        fuente.setPointSize(tamano)
+        app = QApplication.instance()
+        app.setFont(fuente)
+        
     def abrir_metodo_escalonado(self):
-        self.ventana_escalonado = VentanaEscalonado()
+        self.ventana_escalonado = VentanaEscalonado(self.tamano_fuente)
         self.ventana_escalonado.show()
+        self.cambiar_fuente_signal.connect(self.ventana_escalonado.actualizar_fuente_local)
         self.close()
 
     def abrir_operaciones_vectoriales_combinadas(self):
-        self.ventana_operaciones_combinadas = VentanaOperacionesCombinadas()
+        self.ventana_operaciones_combinadas = VentanaOperacionesCombinadas(self.tamano_fuente)
         self.ventana_operaciones_combinadas.show()
+        self.cambiar_fuente_signal.connect(self.ventana_operaciones_combinadas.actualizar_fuente_local)
         self.close()
 
     def abrir_producto_vectorial(self):
-        self.ventana_producto_vectorial = VentanaProductoVectorial()
+        self.ventana_producto_vectorial = VentanaProductoVectorial(self.tamano_fuente)
         self.ventana_producto_vectorial.show()
+        self.cambiar_fuente_signal.connect(self.ventana_producto_vectorial.actualizar_fuente_local)
         self.close()
 
     def limpiar_layout(self, layout):
@@ -83,10 +135,14 @@ class MenuAplicacion(QMainWindow):
 
 
 class VentanaEscalonado(QWidget):
-    def __init__(self):
+    def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Método Escalonado")
-        self.setGeometry(100, 100, 1200, 700)  # Ajustar tamaño de ventana para más espacio
+        self.setGeometry(50, 50, 1200, 800)
+        self.tamano_fuente = tamano_fuente
+        
+        # Establecer estilo
+        self.actualizar_fuente_local(self.tamano_fuente)
         
         # Layout Principal
         self.layout = QVBoxLayout()
@@ -95,7 +151,10 @@ class VentanaEscalonado(QWidget):
         # Título
         self.label_titulo = QLabel("Método Escalonado - Eliminación Gaussiana", self)
         self.label_titulo.setAlignment(Qt.AlignCenter)
-        self.label_titulo.setStyleSheet("font-size: 20px; font-weight: bold; margin-bottom: 20px;")
+        fuente_titulo = QFont()
+        fuente_titulo.setPointSize(self.tamano_fuente + 6)
+        fuente_titulo.setBold(True)
+        self.label_titulo.setFont(fuente_titulo)
         self.layout.addWidget(self.label_titulo)
 
         # Layout de Entrada de Datos
@@ -106,19 +165,19 @@ class VentanaEscalonado(QWidget):
         self.label_ecuaciones = QLabel("Ecuaciones:", self)
         self.layout_entrada.addWidget(self.label_ecuaciones)
         self.input_ecuaciones = QLineEdit(self)
-        self.input_ecuaciones.setFixedWidth(50)  # Reducir ancho
+        self.input_ecuaciones.setFixedWidth(60)
         self.layout_entrada.addWidget(self.input_ecuaciones)
 
         # Entrada para el número de variables
         self.label_variables = QLabel("Variables:", self)
         self.layout_entrada.addWidget(self.label_variables)
         self.input_variables = QLineEdit(self)
-        self.input_variables.setFixedWidth(50)  # Reducir ancho
+        self.input_variables.setFixedWidth(60)
         self.layout_entrada.addWidget(self.input_variables)
 
         # Botón para crear la matriz
         self.boton_crear_matriz = QPushButton("Crear Matriz", self)
-        self.boton_crear_matriz.setFixedWidth(120)  # Reducir ancho del botón
+        self.boton_crear_matriz.setFixedWidth(150)
         self.boton_crear_matriz.clicked.connect(self.crear_matriz)
         self.layout_entrada.addWidget(self.boton_crear_matriz)
 
@@ -127,7 +186,7 @@ class VentanaEscalonado(QWidget):
 
         # Botón para regresar al menú principal
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
-        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout_entrada.addWidget(self.boton_regresar)
 
@@ -135,10 +194,21 @@ class VentanaEscalonado(QWidget):
         self.layout_matriz_resultado = QHBoxLayout()
         self.layout.addLayout(self.layout_matriz_resultado)
 
-        # Área de tabla para mostrar la matriz
+        # Área de tabla para mostrar la matriz dentro de un QScrollArea
+        self.scroll_area_tabla = QScrollArea(self)
+        self.scroll_area_tabla.setWidgetResizable(True)
+        self.tabla_matriz_widget = QWidget()
+        self.tabla_matriz_layout = QVBoxLayout()
+        self.tabla_matriz_widget.setLayout(self.tabla_matriz_layout)
+        self.scroll_area_tabla.setWidget(self.tabla_matriz_widget)
+        self.layout_matriz_resultado.addWidget(self.scroll_area_tabla)
+
         self.tabla_matriz = QTableWidget(self)
-        self.tabla_matriz.setFixedWidth(400)  # Establecer ancho fijo para la tabla
-        self.layout_matriz_resultado.addWidget(self.tabla_matriz)
+        self.tabla_matriz_layout.addWidget(self.tabla_matriz)
+
+        # Ajustar la tabla
+        self.tabla_matriz.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabla_matriz.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         # Espaciador
         self.layout_matriz_resultado.addStretch()
@@ -156,30 +226,57 @@ class VentanaEscalonado(QWidget):
         """)
         self.frame_resultado.setLayout(QVBoxLayout())
         self.texto_resultado = QTextEdit(self.frame_resultado)
-        self.texto_resultado.setFont(QFont("Arial", 12))
+        fuente_texto = QFont()
+        fuente_texto.setPointSize(self.tamano_fuente)
+        self.texto_resultado.setFont(fuente_texto)
         self.texto_resultado.setStyleSheet("background-color: #FAFAFA;")
-        self.texto_resultado.setFixedHeight(450)  # Aumentar la altura del área de texto
-        self.texto_resultado.setFixedWidth(600)  # Aumentar el ancho del área de texto
+        self.texto_resultado.setMinimumHeight(500)
+        self.texto_resultado.setMinimumWidth(600)
+        self.texto_resultado.setReadOnly(True)
         self.frame_resultado.layout().addWidget(self.texto_resultado)
         self.layout_matriz_resultado.addWidget(self.frame_resultado)
 
         # Botón para calcular
         self.boton_calcular = QPushButton("Calcular", self)
-        self.boton_calcular.setFixedWidth(150)  # Reducir ancho del botón
+        self.boton_calcular.setFixedWidth(200)
         self.boton_calcular.clicked.connect(self.calcular_escalonado)
         self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
 
         # Botón para mostrar paso a paso
         self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso", self)
-        self.boton_paso_a_paso.setFixedWidth(200)  # Aumentar ancho del botón
+        self.boton_paso_a_paso.setFixedWidth(250)
         self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
-        self.boton_paso_a_paso.hide()  # Ocultar inicialmente
+        self.boton_paso_a_paso.hide()
         self.layout.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
 
         # Variable para almacenar los pasos
         self.resultado_pasos = ""
         self.resultado_final = ""
-        self.modo_paso_a_paso = False  # Variable para controlar el modo
+        self.modo_paso_a_paso = False
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualiza el estilo y tamaño de fuente localmente."""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+            QTableWidget QHeaderView::section {{
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #D0D0D0;
+                font-size: {tamano}px;
+            }}
+            QTableWidget {{
+                gridline-color: #D0D0D0;
+            }}
+        """)
 
     def crear_matriz(self):
         try:
@@ -192,6 +289,10 @@ class VentanaEscalonado(QWidget):
             self.tabla_matriz.setRowCount(n)
             self.tabla_matriz.setColumnCount(m + 1)
             self.tabla_matriz.setHorizontalHeaderLabels([f"x{i+1}" for i in range(m)] + ["Resultado"])
+            
+            # Ajustar el tamaño de las celdas
+            self.tabla_matriz.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.tabla_matriz.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -215,14 +316,14 @@ class VentanaEscalonado(QWidget):
                 entradas.append(fila)
 
             # Calcular el método escalonado
-            matriz = Matriz(n, entradas)  # Modificar para aceptar entradas directas
-            self.resultado_pasos = matriz.eliminacion_gaussiana()  # Guardar pasos para mostrar luego
-            self.resultado_final = matriz.interpretar_resultado()  # Guardar resultado final
+            matriz = Matriz(n, entradas)
+            self.resultado_pasos = matriz.eliminacion_gaussiana()
+            self.resultado_final = matriz.interpretar_resultado()
             
             # Mostrar resultado simplificado
             self.texto_resultado.setText(self.resultado_final)
             self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
-            self.boton_paso_a_paso.show()  # Mostrar el botón para ver los pasos
+            self.boton_paso_a_paso.show()
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -242,19 +343,26 @@ class VentanaEscalonado(QWidget):
 
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
         self.close()
 
+# Implementación de las clases VentanaOperacionesCombinadas y VentanaProductoVectorial con ajustes similares...
 
 class VentanaOperacionesCombinadas(QWidget):
-    def __init__(self):
+    def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Operaciones Combinadas de Vectores")
         self.setGeometry(100, 100, 1200, 700)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+
+        # Layout principal
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
-        # Layout Izquierdo para entrada de vectores y escalares
+        # Layout izquierdo para entrada de vectores y escalares
         self.layout_izquierdo = QVBoxLayout()
         self.layout.addLayout(self.layout_izquierdo)
 
@@ -266,19 +374,19 @@ class VentanaOperacionesCombinadas(QWidget):
         self.label_vectores = QLabel("Número de Vectores:", self)
         self.layout_entrada.addWidget(self.label_vectores)
         self.input_vectores = QLineEdit(self)
-        self.input_vectores.setFixedWidth(50)
+        self.input_vectores.setFixedWidth(70)
         self.layout_entrada.addWidget(self.input_vectores)
 
         # Dimensión de los Vectores
         self.label_dimension = QLabel("Dimensión de los Vectores:", self)
         self.layout_entrada.addWidget(self.label_dimension)
         self.input_dimension = QLineEdit(self)
-        self.input_dimension.setFixedWidth(50)
+        self.input_dimension.setFixedWidth(70)
         self.layout_entrada.addWidget(self.input_dimension)
 
         # Botón Crear Entradas
         self.boton_crear_vectores = QPushButton("Crear Entradas", self)
-        self.boton_crear_vectores.setFixedWidth(150)
+        self.boton_crear_vectores.setFixedWidth(180)
         self.boton_crear_vectores.clicked.connect(self.crear_entradas_vectores)
         self.layout_entrada.addWidget(self.boton_crear_vectores)
 
@@ -291,13 +399,13 @@ class VentanaOperacionesCombinadas(QWidget):
 
         # Tabla para los vectores
         self.tabla_vectores = QTableWidget(self)
-        self.tabla_vectores.setFixedWidth(350)
+        self.tabla_vectores.setFixedWidth(400)
         self.tabla_vectores.setFixedHeight(250)
         self.layout_tablas.addWidget(self.tabla_vectores)
 
         # Tabla para los escalares
         self.tabla_escalars = QTableWidget(self)
-        self.tabla_escalars.setFixedWidth(350)
+        self.tabla_escalars.setFixedWidth(400)
         self.tabla_escalars.setFixedHeight(200)
         self.layout_tablas.addWidget(self.tabla_escalars)
 
@@ -313,7 +421,9 @@ class VentanaOperacionesCombinadas(QWidget):
 
         self.label_resultado = QLabel("Resultado de la Operación", self)
         self.label_resultado.setAlignment(Qt.AlignCenter)
-        self.label_resultado.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        fuente_resultado = QFont()
+        fuente_resultado.setPointSize(self.tamano_fuente + 2)
+        self.label_resultado.setFont(fuente_resultado)
         self.layout_resultados.addWidget(self.label_resultado)
 
         # QScrollArea para contener el frame con los resultados
@@ -321,7 +431,7 @@ class VentanaOperacionesCombinadas(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.layout_resultados.addWidget(self.scroll_area)
 
-        # Frame para contener el layout de resultado en formato horizontal
+        # Frame para contener el layout de resultado
         self.frame_resultado = QFrame(self)
         self.frame_resultado.setStyleSheet("""
             QFrame {
@@ -340,9 +450,33 @@ class VentanaOperacionesCombinadas(QWidget):
 
         # Botón para regresar al menú principal
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
-        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualiza el estilo y tamaño de fuente localmente."""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+            QTableWidget QHeaderView::section {{
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #D0D0D0;
+                font-size: {tamano}px;
+            }}
+            QTableWidget {{
+                gridline-color: #D0D0D0;
+            }}
+        """)
 
     def crear_entradas_vectores(self):
         try:
@@ -439,7 +573,12 @@ class VentanaOperacionesCombinadas(QWidget):
                 self.frame_layout.addWidget(label_suma)
 
             # Remover el último símbolo de suma
-            self.frame_layout.takeAt(self.frame_layout.count() - 1)
+            if self.frame_layout.count() > 0:
+                item = self.frame_layout.takeAt(self.frame_layout.count() - 1)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+
 
             # Agregar el símbolo de igual y el resultado
             label_igual = QLabel(" = ", self)
@@ -470,14 +609,21 @@ class VentanaOperacionesCombinadas(QWidget):
 
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
         self.close()
 
+
 class VentanaProductoVectorial(QWidget):
-    def __init__(self):
+    def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Multiplicación de Vector Fila x Vector Columna")
         self.setGeometry(100, 100, 1200, 700)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+
+        # Layout principal
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
@@ -531,7 +677,9 @@ class VentanaProductoVectorial(QWidget):
 
         self.label_resultado = QLabel("Resultado del Producto Escalar", self)
         self.label_resultado.setAlignment(Qt.AlignCenter)
-        self.label_resultado.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        fuente_resultado = QFont()
+        fuente_resultado.setPointSize(self.tamano_fuente + 2)
+        self.label_resultado.setFont(fuente_resultado)
         self.layout_resultados.addWidget(self.label_resultado)
 
         # Área de resultados
@@ -542,9 +690,33 @@ class VentanaProductoVectorial(QWidget):
 
         # Botón para regresar al menú principal
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
-        self.boton_regresar.setFixedWidth(200)
+        self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualiza el estilo y tamaño de fuente localmente."""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+            QTableWidget QHeaderView::section {{
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #D0D0D0;
+                font-size: {tamano}px;
+            }}
+            QTableWidget {{
+                gridline-color: #D0D0D0;
+            }}
+        """)
 
     def crear_vectores(self):
         try:
@@ -578,27 +750,25 @@ class VentanaProductoVectorial(QWidget):
                 item = self.tabla_vector_fila.item(0, i)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Fila, Componente {i + 1}.")
-                vector_fila.append(item.text())
+                vector_fila.append(float(item.text()))
 
             # Leer componentes del vector columna
             for i in range(dimension):
                 item = self.tabla_vector_columna.item(i, 0)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Columna, Componente {i + 1}.")
-                vector_columna.append(item.text())
+                vector_columna.append(float(item.text()))
 
-            # Crear instancias de Vector utilizando vector.py
-            vector_fila_obj = Vector.crear_vector_desde_entrada(vector_fila)
-            vector_columna_obj = Vector.crear_vector_desde_entrada(vector_columna)
-
-            # Realizar el cálculo del producto escalar utilizando vector.py
-            producto = vector_fila_obj.producto_punto(vector_columna_obj)
+            # Realizar el cálculo del producto escalar
+            vector_obj_fila = Vector(vector_fila)
+            vector_obj_columna = Vector(vector_columna)
+            producto = vector_obj_fila.producto_punto(vector_obj_columna)
 
             # Mostrar el resultado en el área de resultados
             self.area_resultados.clear()
             resultado_texto = "Producto Escalar:\n\n" + \
-                                "Vector Fila: " + str(vector_fila_obj.componentes) + "\n\n" + \
-                                "Vector Columna:\n" + "\n".join([f"[{x}]" for x in vector_columna_obj.componentes]) + "\n\n" + \
+                                "Vector Fila: " + str(vector_fila) + "\n\n" + \
+                                "Vector Columna:\n" + "\n".join([f"[{x}]" for x in vector_columna]) + "\n\n" + \
                                 f"Resultado: {producto:.2f}"
             self.area_resultados.setText(resultado_texto)
 
@@ -607,11 +777,19 @@ class VentanaProductoVectorial(QWidget):
 
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
         self.close()
 
+
 def iniciar_menu():
     app = QApplication(sys.argv)
+    app.setStyle('Fusion')  # Estilo moderno
+    fuente_base = QFont()
+    fuente_base.setPointSize(14)  # Tamaño de fuente inicial
+    app.setFont(fuente_base)
+    
     ventana = MenuAplicacion()
     ventana.show()
     sys.exit(app.exec())
