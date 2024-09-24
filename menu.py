@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from matriz import Matriz
 from vector import Vector
+from matrizxvector import MxV
 import sys
 
 class MenuAplicacion(QMainWindow):
@@ -73,6 +74,10 @@ class MenuAplicacion(QMainWindow):
         self.boton_producto_vectorial.clicked.connect(self.abrir_producto_vectorial)
         self.layout.addWidget(self.boton_producto_vectorial)
         
+        self.boton_producto_matriz = QPushButton("Producto Matriz x Vector", self)
+        self.boton_producto_matriz.clicked.connect(self.abrir_producto_matriz_vector)
+        self.layout.addWidget(self.boton_producto_matriz)
+        
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
@@ -126,6 +131,12 @@ class MenuAplicacion(QMainWindow):
         self.cambiar_fuente_signal.connect(self.ventana_producto_vectorial.actualizar_fuente_local)
         self.close()
 
+    def abrir_producto_matriz_vector(self):
+        self.ventana_producto_matriz_vector = VentanaProductoMatrizVector(self.tamano_fuente)
+        self.ventana_producto_matriz_vector.show()
+        self.cambiar_fuente_signal.connect(self.ventana_producto_matriz_vector.actualizar_fuente_local)
+        self.close()
+        
     def limpiar_layout(self, layout):
         """Elimina todos los widgets del layout dado."""
         while layout.count():
@@ -782,6 +793,201 @@ class VentanaProductoVectorial(QWidget):
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
+        self.main_window.show()
+        self.close()
+        
+class VentanaProductoMatrizVector(QWidget):
+    def __init__(self, tamano_fuente):
+        super().__init__()
+        self.setWindowTitle("Producto Matriz por Vector y Propiedad A(u + v)")
+        self.setGeometry(100, 100, 1000, 700)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+
+        # Layout principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        # Título
+        self.label_titulo = QLabel("Producto Matriz por Vector y Propiedad A(u + v)", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        fuente_titulo = QFont()
+        fuente_titulo.setPointSize(self.tamano_fuente + 4)
+        fuente_titulo.setBold(True)
+        self.label_titulo.setFont(fuente_titulo)
+        self.layout.addWidget(self.label_titulo)
+
+        # Layout de entrada de datos
+        self.layout_entrada = QVBoxLayout()
+        self.layout.addLayout(self.layout_entrada)
+
+        # Configurar tabla para la matriz
+        self.tabla_matriz = QTableWidget(self)
+        self.layout_entrada.addWidget(self.tabla_matriz)
+
+        # Configurar tablas para los vectores
+        self.layout_vectores = QHBoxLayout()
+        self.tabla_vector_u = QTableWidget(self)
+        self.tabla_vector_u.setFixedWidth(300)
+        self.tabla_vector_u.setFixedHeight(250)
+        self.tabla_vector_u.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.layout_vectores.addWidget(self.tabla_vector_u)
+
+        self.tabla_vector_v = QTableWidget(self)
+        self.tabla_vector_v.setFixedWidth(300)
+        self.tabla_vector_v.setFixedHeight(250)
+        self.tabla_vector_v.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.layout_vectores.addWidget(self.tabla_vector_v)
+
+        self.layout_entrada.addLayout(self.layout_vectores)
+
+        # Layout para el botón de creación de matriz y vectores
+        self.layout_botones = QHBoxLayout()
+        self.layout.addLayout(self.layout_botones)
+
+        # Entrada para tamaño de matriz
+        self.input_filas = QLineEdit(self)
+        self.input_filas.setPlaceholderText("Filas de la Matriz")
+        self.input_filas.setFixedWidth(150)
+        self.layout_botones.addWidget(self.input_filas)
+
+        self.input_columnas = QLineEdit(self)
+        self.input_columnas.setPlaceholderText("Columnas de la Matriz")
+        self.input_columnas.setFixedWidth(150)
+        self.layout_botones.addWidget(self.input_columnas)
+
+        # Botón para crear la matriz y vectores
+        self.boton_crear = QPushButton("Crear Matriz y Vectores", self)
+        self.boton_crear.clicked.connect(self.crear_matriz_vectores)
+        self.layout_botones.addWidget(self.boton_crear)
+
+        # Botón para calcular
+        self.boton_calcular = QPushButton("Aplicar Propiedad A(u + v)", self)
+        self.boton_calcular.clicked.connect(self.aplicar_propiedad)
+        self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+
+        # Área de resultados
+        self.area_resultados = QTextEdit(self)
+        self.area_resultados.setReadOnly(True)
+        self.layout.addWidget(self.area_resultados)
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualiza el estilo y tamaño de fuente localmente."""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+            QTableWidget QHeaderView::section {{
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #D0D0D0;
+                font-size: {tamano}px;
+            }}
+            QTableWidget {{
+                gridline-color: #D0D0D0;
+            }}
+        """)
+
+    def crear_matriz_vectores(self):
+        try:
+            filas = int(self.input_filas.text())
+            columnas = int(self.input_columnas.text())
+
+            if filas <= 0 or columnas <= 0:
+                raise ValueError("El número de filas y columnas debe ser positivo.")
+
+            # Crear tabla de matriz
+            self.tabla_matriz.setRowCount(filas)
+            self.tabla_matriz.setColumnCount(columnas)
+            self.tabla_matriz.setHorizontalHeaderLabels([f"Columna {i + 1}" for i in range(columnas)])
+            self.tabla_matriz.setVerticalHeaderLabels([f"Fila {i + 1}" for i in range(filas)])
+
+            # Crear tabla para los vectores u y v
+            self.tabla_vector_u.setRowCount(columnas)
+            self.tabla_vector_u.setColumnCount(1)
+            self.tabla_vector_u.setHorizontalHeaderLabels(["Vector u"])
+            self.tabla_vector_u.setVerticalHeaderLabels([f"Componente {i + 1}" for i in range(columnas)])
+
+            self.tabla_vector_v.setRowCount(columnas)
+            self.tabla_vector_v.setColumnCount(1)
+            self.tabla_vector_v.setHorizontalHeaderLabels(["Vector v"])
+            self.tabla_vector_v.setVerticalHeaderLabels([f"Componente {i + 1}" for i in range(columnas)])
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def aplicar_propiedad(self):
+        try:
+            filas = self.tabla_matriz.rowCount()
+            columnas = self.tabla_matriz.columnCount()
+
+            if filas == 0 or columnas == 0:
+                raise ValueError("Primero debes crear la matriz y los vectores.")
+
+            # Leer matriz
+            matriz = []
+            for i in range(filas):
+                fila = []
+                for j in range(columnas):
+                    item = self.tabla_matriz.item(i, j)
+                    if item is None or not item.text():
+                        raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}) de la matriz.")
+                    fila.append(float(item.text()))
+                matriz.append(fila)
+
+            # Leer vector u
+            vector_u = []
+            for i in range(columnas):
+                item = self.tabla_vector_u.item(i, 0)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor válido en la posición ({i + 1}) del vector u.")
+                vector_u.append(float(item.text()))
+
+            # Leer vector v
+            vector_v = []
+            for i in range(columnas):
+                item = self.tabla_vector_v.item(i, 0)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor válido en la posición ({i + 1}) del vector v.")
+                vector_v.append(float(item.text()))
+
+            # Crear instancia de MxV y aplicar propiedad
+            mxv = MxV(matriz=matriz, vectores=[vector_u, vector_v])
+            Au, Av, A_u_plus_v = mxv.aplicar_propiedad()
+
+            # Mostrar resultados
+            resultado_texto = f"Matriz A:\n{self.formatear_matriz(matriz)}\n\n"
+            resultado_texto += f"Vector u: {vector_u}\n\n"
+            resultado_texto += f"Vector v: {vector_v}\n\n"
+            resultado_texto += f"Au: {Au}\n\n"
+            resultado_texto += f"Av: {Av}\n\n"
+            resultado_texto += f"A(u + v): {A_u_plus_v}\n\n"
+
+            self.area_resultados.setText(resultado_texto)
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def formatear_matriz(self, matriz):
+        """Convierte una lista de listas en una representación de cadena para la matriz."""
+        return "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz])
 
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
