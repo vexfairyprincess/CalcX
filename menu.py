@@ -972,22 +972,46 @@ class VentanaProductoMatrizVector(QWidget):
             mxv = MxV(matriz=matriz, vectores=[vector_u, vector_v])
             Au, Av, A_u_plus_v = mxv.aplicar_propiedad()
 
+            # Calcular suma u + v
+            u_plus_v = [vector_u[i] + vector_v[i] for i in range(len(vector_u))]
+
             # Mostrar resultados
             resultado_texto = f"Matriz A:\n{self.formatear_matriz(matriz)}\n\n"
-            resultado_texto += f"Vector u: {vector_u}\n\n"
-            resultado_texto += f"Vector v: {vector_v}\n\n"
-            resultado_texto += f"Au: {Au}\n\n"
-            resultado_texto += f"Av: {Av}\n\n"
-            resultado_texto += f"A(u + v): {A_u_plus_v}\n\n"
+            resultado_texto += f"Vector u:\n{self.formatear_vector(vector_u)}\n\n"
+            resultado_texto += f"Vector v:\n{self.formatear_vector(vector_v)}\n\n"
+            resultado_texto += f"u + v:\n{self.formatear_vector(u_plus_v)}\n\n"
+
+            resultado_texto += "Pasos para calcular Au:\n"
+            for i in range(len(Au)):
+                pasos_Au = " + ".join([f"{matriz[i][j]}*{vector_u[j]}" for j in range(len(vector_u))])
+                resultado_texto += f"A[{i + 1}]u = {pasos_Au} = {Au[i]:.2f}\n"
+
+            resultado_texto += "\nPasos para calcular Av:\n"
+            for i in range(len(Av)):
+                pasos_Av = " + ".join([f"{matriz[i][j]}*{vector_v[j]}" for j in range(len(vector_v))])
+                resultado_texto += f"A[{i + 1}]v = {pasos_Av} = {Av[i]:.2f}\n"
+
+            resultado_texto += "\nPasos para calcular A(u + v):\n"
+            for i in range(len(A_u_plus_v)):
+                pasos_A_u_v = " + ".join([f"{matriz[i][j]}*{u_plus_v[j]}" for j in range(len(u_plus_v))])
+                resultado_texto += f"A[{i + 1}](u + v) = {pasos_A_u_v} = {A_u_plus_v[i]:.2f}\n"
+
+            resultado_texto += f"\nAu:\n {self.formatear_vector(Au)}\n"
+            resultado_texto += f"Av:\n {self.formatear_vector(Av)}\n"
+            resultado_texto += f"A(u + v):\n {self.formatear_vector(A_u_plus_v)}\n"
 
             self.area_resultados.setText(resultado_texto)
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
+    def formatear_vector(self, vector):
+        """Convierte un vector (lista) en una representación vertical."""
+        return "\n".join([f"[{val:.2f}]" for val in vector])
+
     def formatear_matriz(self, matriz):
-        """Convierte una lista de listas en una representación de cadena para la matriz."""
-        return "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz])
+            """Convierte una lista de listas en una representación de cadena para la matriz."""
+            return "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz])
 
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
@@ -999,7 +1023,7 @@ class VentanaProductoMatrizVector(QWidget):
 
 def iniciar_menu():
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')  # Estilo moderno
+    app.setStyle('Fusion')  
     fuente_base = QFont()
     fuente_base.setPointSize(14)  # Tamaño de fuente inicial
     app.setFont(fuente_base)
