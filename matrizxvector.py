@@ -1,11 +1,20 @@
 class MxV:
     def __init__(self, matriz=None, vectores=None):
-        """Recibe una matriz y una lista de vectores."""
-        self.matriz = self.obtener_matriz(matriz)
-        self.vectores = [self.obtener_vector(vector) for vector in vectores]
+        """
+        Inicializa la clase MxV con una matriz y una lista de vectores.
+        :param matriz: lista de listas de floats que representa la matriz
+        :param vectores: lista de listas de floats que representan vectores
+        """
+        self.matriz = self.obtener_matriz(matriz)  # Procesa y almacena la matriz
+        self.vectores = [self.obtener_vector(vector) for vector in vectores]  # Procesa y almacena los vectores
 
     def obtener_matriz(self, entradas):
-        """Convierte las entradas (listas de listas de floats) en una matriz."""
+        """
+        Convierte una lista de listas de cadenas o números en una matriz de floats.
+        :param entradas: lista de listas que representan la matriz
+        :return: matriz de floats
+        :raises ValueError: Si algún elemento no puede convertirse a float
+        """
         try:
             matriz = [[float(n) for n in fila] for fila in entradas]
         except ValueError:
@@ -13,7 +22,12 @@ class MxV:
         return matriz
 
     def obtener_vector(self, entradas):
-        """Convierte las entradas (lista de floats) en un vector."""
+        """
+        Convierte una lista de cadenas o números en un vector de floats.
+        :param entradas: lista que representa el vector
+        :return: vector de floats
+        :raises ValueError: Si algún elemento no puede convertirse a float
+        """
         try:
             vector = [float(n) for n in entradas]
         except ValueError:
@@ -21,92 +35,62 @@ class MxV:
         return vector
 
     def sumar_vectores(self):
-        """Suma todos los vectores en la lista de vectores."""
+        """
+        Suma todos los vectores proporcionados en la lista de vectores.
+        :return: vector resultante de la suma
+        :raises ValueError: Si no hay vectores proporcionados
+        """
         if not self.vectores:
             raise ValueError("No se proporcionaron vectores para sumar.")
 
-        # Suponiendo que todos los vectores tienen la misma longitud
-        n = len(self.vectores[0])
-        vector_suma = [0] * n
+        n = len(self.vectores[0])  # Longitud de los vectores
+        vector_suma = [0] * n  # Vector inicializado a cero
 
         for vector in self.vectores:
             for i in range(n):
-                vector_suma[i] += vector[i]
+                vector_suma[i] += vector[i]  # Suma cada componente del vector
 
         return vector_suma
 
     def multiplicar_matriz_por_vector(self, vector):
-        """Multiplica una matriz por un vector."""
+        """
+        Multiplica la matriz almacenada por un vector dado.
+        :param vector: vector por el cual multiplicar la matriz
+        :return: vector resultante de la multiplicación
+        :raises ValueError: Si las dimensiones de la matriz y el vector no coinciden
+        """
         filas = len(self.matriz)
         columnas = len(self.matriz[0])
 
         if columnas != len(vector):
             raise ValueError("El número de columnas de la matriz debe coincidir con el tamaño del vector")
 
-        # Inicializar el vector resultado
-        resultado = [0] * filas
+        resultado = [0] * filas  # Vector resultado inicializado a cero
 
         for i in range(filas):
             suma = 0
             for j in range(columnas):
-                suma += self.matriz[i][j] * vector[j]
+                suma += self.matriz[i][j] * vector[j]  # Multiplica y suma la fila por el vector
             resultado[i] = suma
 
         return resultado
 
     def aplicar_propiedad(self):
-        """Aplica la propiedad A(u + v) = Au + Av."""
+        """
+        Aplica la propiedad lineal A(u + v) = Au + Av para dos vectores u y v.
+        :return: tupla con los resultados Au, Av y A(u + v)
+        :raises ValueError: Si no hay exactamente dos vectores para aplicar la propiedad
+        """
         if len(self.vectores) != 2:
             raise ValueError("Se requieren exactamente 2 vectores para aplicar la propiedad.")
 
-        # Extraer los vectores u y v
-        u = self.vectores[0]
-        v = self.vectores[1]
+        u = self.vectores[0]  # Vector u
+        v = self.vectores[1]  # Vector v
 
-        # Multiplicar A por u
-        Au = self.multiplicar_matriz_por_vector(u)
+        Au = self.multiplicar_matriz_por_vector(u)  # Multiplica la matriz por u
+        Av = self.multiplicar_matriz_por_vector(v)  # Multiplica la matriz por v
 
-        # Multiplicar A por v
-        Av = self.multiplicar_matriz_por_vector(v)
+        u_plus_v = self.sumar_vectores()  # Suma los vectores u y v
+        A_u_plus_v = self.multiplicar_matriz_por_vector(u_plus_v)  # Multiplica la matriz por u+v
 
-        # Sumar los vectores u y v
-        u_plus_v = self.sumar_vectores()
-
-        # Multiplicar A por (u + v)
-        A_u_plus_v = self.multiplicar_matriz_por_vector(u_plus_v)
-
-        return Au, Av, A_u_plus_v
-
-"""
- Ejemplo de uso
-
-# Definir una matriz
-matriz = [
-    [1, 2, 3, 4],
-    [4, 5, 6, 4],
-    [7, 8, 9, 4],
-    [7, 9, 8, 2]
-]
-
-# Definir vectores
-vector_u = [1, 0, 1, 4]
-vector_v = [1, 1, 3, 4]
-
-mxv_instance = MxV(matriz=matriz, vectores=[vector_u, vector_v])
-
-Au, Av, A_u_plus_v = mxv_instance.aplicar_propiedad()
-
-# Mostrar los resultados
-print(f"Au: {Au}")
-print(f"Av: {Av}")
-print(f"A(u + v): {A_u_plus_v}")
-
-# Verificar si Au + Av es igual a A(u + v)
-Au_plus_Av = [Au[i] + Av[i] for i in range(len(Au))]
-print(f"Au + Av: {Au_plus_Av}")
-
-if Au_plus_Av == A_u_plus_v:
-    print("La propiedad A(u + v) = Au + Av se cumple.")
-else:
-    print("La propiedad no se cumple.")
-"""
+        return Au, Av, A_u_plus_v  # Retorna los tres resultados

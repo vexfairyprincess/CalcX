@@ -20,7 +20,7 @@ class MenuAplicacion(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         
         # Fuente base
-        self.tamano_fuente = 14  # Tamaño de fuente inicial
+        self.tamano_fuente = 17  # Tamaño de fuente inicial
         
         # Widget principal
         self.main_widget = QWidget()
@@ -82,16 +82,16 @@ class MenuAplicacion(QMainWindow):
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
         # Botones para ajustar el tamaño de fuente
-        botones_fuente_layout = QHBoxLayout()
-        self.layout.addLayout(botones_fuente_layout)
+        # botones_fuente_layout = QHBoxLayout()
+        # self.layout.addLayout(botones_fuente_layout)
 
-        self.boton_aumentar_fuente = QPushButton("Aumentar Tamaño de Fuente", self)
-        self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
-        botones_fuente_layout.addWidget(self.boton_aumentar_fuente)
+        # self.boton_aumentar_fuente = QPushButton("Aumentar Tamaño de Fuente", self)
+        # self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
+        # botones_fuente_layout.addWidget(self.boton_aumentar_fuente)
 
-        self.boton_disminuir_fuente = QPushButton("Disminuir Tamaño de Fuente", self)
-        self.boton_disminuir_fuente.clicked.connect(self.disminuir_tamano_fuente)
-        botones_fuente_layout.addWidget(self.boton_disminuir_fuente)
+        # self.boton_disminuir_fuente = QPushButton("Disminuir Tamaño de Fuente", self)
+        # self.boton_disminuir_fuente.clicked.connect(self.disminuir_tamano_fuente)
+        # botones_fuente_layout.addWidget(self.boton_disminuir_fuente)
         
         # Botón para salir
         self.boton_salir = QPushButton("Salir", self)
@@ -1025,7 +1025,7 @@ def iniciar_menu():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  
     fuente_base = QFont()
-    fuente_base.setPointSize(14)  # Tamaño de fuente inicial
+    fuente_base.setPointSize(17)
     app.setFont(fuente_base)
     
     ventana = MenuAplicacion()
