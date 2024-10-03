@@ -78,6 +78,10 @@ class MenuAplicacion(QMainWindow):
         self.boton_producto_matriz.clicked.connect(self.abrir_producto_matriz_vector)
         self.layout.addWidget(self.boton_producto_matriz)
         
+        self.boton_suma_matrices = QPushButton("Suma de Matrices", self)
+        self.boton_suma_matrices.clicked.connect(self.abrir_suma_matrices)
+        self.layout.addWidget(self.boton_suma_matrices)
+        
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
@@ -135,6 +139,12 @@ class MenuAplicacion(QMainWindow):
         self.ventana_producto_matriz_vector = VentanaProductoMatrizVector(self.tamano_fuente)
         self.ventana_producto_matriz_vector.show()
         self.cambiar_fuente_signal.connect(self.ventana_producto_matriz_vector.actualizar_fuente_local)
+        self.close()
+        
+    def abrir_suma_matrices(self):
+        self.ventana_suma_matrices = VentanaSumaMatrices(self.tamano_fuente)
+        self.ventana_suma_matrices.show()
+        self.cambiar_fuente_signal.connect(self.ventana_suma_matrices.actualizar_fuente_local)
         self.close()
         
     def limpiar_layout(self, layout):
@@ -975,6 +985,16 @@ class VentanaProductoMatrizVector(QWidget):
             # Calcular suma u + v
             u_plus_v = [vector_u[i] + vector_v[i] for i in range(len(vector_u))]
 
+            # Calcular Au + Av
+            Au_plus_Av = [Au[i] + Av[i] for i in range(len(Au))]
+
+            # Determinar si la propiedad se cumple
+            conclusion = ""
+            if Au_plus_Av == A_u_plus_v:
+                conclusion = "La propiedad A(u + v) = Au + Av se cumple."
+            else:
+                conclusion = "La propiedad A(u + v) = Au + Av no se cumple."
+
             # Mostrar resultados
             resultado_texto = f"Matriz A:\n{self.formatear_matriz(matriz)}\n\n"
             resultado_texto += f"Vector u:\n{self.formatear_vector(vector_u)}\n\n"
@@ -996,9 +1016,13 @@ class VentanaProductoMatrizVector(QWidget):
                 pasos_A_u_v = " + ".join([f"{matriz[i][j]}*{u_plus_v[j]}" for j in range(len(u_plus_v))])
                 resultado_texto += f"A[{i + 1}](u + v) = {pasos_A_u_v} = {A_u_plus_v[i]:.2f}\n"
 
-            resultado_texto += f"\nAu:\n {self.formatear_vector(Au)}\n"
-            resultado_texto += f"Av:\n {self.formatear_vector(Av)}\n"
-            resultado_texto += f"A(u + v):\n {self.formatear_vector(A_u_plus_v)}\n"
+            resultado_texto += f"\nAu:\n{self.formatear_vector(Au)}\n"
+            resultado_texto += f"Av:\n{self.formatear_vector(Av)}\n"
+            resultado_texto += f"Au + Av:\n{self.formatear_vector(Au_plus_Av)}\n"
+            resultado_texto += f"A(u + v):\n{self.formatear_vector(A_u_plus_v)}\n"
+
+            # Mostrar la conclusión final
+            resultado_texto += f"\nConclusión:\n{conclusion}"
 
             self.area_resultados.setText(resultado_texto)
 
@@ -1020,6 +1044,213 @@ class VentanaProductoMatrizVector(QWidget):
         self.main_window.show()
         self.close()
 
+class VentanaSumaMatrices(QWidget):
+    def __init__(self, tamano_fuente):
+        super().__init__()
+        self.setWindowTitle("Suma de matrices")
+        self.setGeometry(100, 100, 1200, 700)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+        
+        # Layout principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        #Layout para entrada de numero matrices, filas y columnas
+        self.layout_entrada = QHBoxLayout()
+        self.layout.addLayout(self.layout_entrada)
+        
+        # Número de matrices
+        self.label_matrices = QLabel("Número de Matrices:", self)
+        self.layout_entrada.addWidget(self.label_matrices)
+        self.input_matrices = QLineEdit(self)
+        self.input_matrices.setFixedWidth(70)
+        self.layout_entrada.addWidget(self.input_matrices)
+        
+        # Número de filas
+        self.label_filas = QLabel("Número de Filas:", self)
+        self.layout_entrada.addWidget(self.label_filas)
+        self.input_filas = QLineEdit(self)
+        self.input_filas.setFixedWidth(70)
+        self.layout_entrada.addWidget(self.input_filas)
+        
+        # Número de columnas
+        self.label_columnas = QLabel("Número de Columnas:", self)
+        self.layout_entrada.addWidget(self.label_columnas)
+        self.input_columnas = QLineEdit(self)
+        self.input_columnas.setFixedWidth(70)
+        self.layout_entrada.addWidget(self.input_columnas)
+        
+        # Botón Crear Matrices
+        self.boton_crear_matrices = QPushButton("Crear Entradas", self)
+        self.boton_crear_matrices.setFixedWidth(180)
+        self.boton_crear_matrices.clicked.connect(self.crear_entradas_matrices)
+        self.layout_entrada.addWidget(self.boton_crear_matrices)
+        
+        # Espaciador
+        self.layout_entrada.addStretch()
+        
+        # Layout para las tablas de matrices y escalares
+        self.layout_tablas = QVBoxLayout()
+        self.layout.addLayout(self.layout_tablas)
+        
+        # Tabla para las matrices
+        self.tabla_matrices = QTableWidget(self)
+        self.tabla_matrices.setFixedWidth(600)
+        self.tabla_matrices.setFixedHeight(300)
+        self.layout_tablas.addWidget(self.tabla_matrices)
+        
+        # Tabla para los escalares
+        self.tabla_escalares = QTableWidget(self)
+        self.tabla_escalares.setFixedWidth(200)
+        self.tabla_escalares.setFixedHeight(200)
+        self.layout_tablas.addWidget(self.tabla_escalares)
+        
+        # Botón para calcular la suma
+        self.boton_calcular = QPushButton("Calcular Suma", self)
+        self.boton_calcular.setFixedWidth(200)
+        self.boton_calcular.clicked.connect(self.calcular_suma)
+        self.layout_tablas.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+        
+        # Área de resultados a la derecha con scroll y estilo mejorado
+        self.layout_resultados = QVBoxLayout()
+        self.layout.addLayout(self.layout_resultados)
+        
+        self.label_resultado = QLabel("Resultado de la Suma", self)
+        self.label_resultado.setAlignment(Qt.AlignCenter)
+        fuente_resultado = QFont()
+        fuente_resultado.setPointSize(self.tamano_fuente + 2)
+        self.label_resultado.setFont(fuente_resultado)
+        self.layout_resultados.addWidget(self.label_resultado)
+        
+        # QScrollArea para contener el frame con los resultados
+        self.scroll_area = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.layout_resultados.addWidget(self.scroll_area)
+        
+        # Frame para contener el layout de resultado
+        self.frame_resultado = QFrame(self)
+        self.scroll_area.setWidget(self.frame_resultado)
+        
+        # Layout inicial para el frame de resultado
+        self.frame_layout = QVBoxLayout()
+        self.frame_resultado.setLayout(self.frame_layout)
+        
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(250)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+        
+    def actualizar_fuente_local(self, tamano):
+            """Actualiza el estilo y tamaño de fuente localmente."""
+            self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+        """)
+            
+    def crear_entradas_matrices(self):
+            try:
+                numero_matrices = int(self.input_matrices.text())
+                filas = int(self.input_filas.text())
+                columnas = int(self.input_columnas.text())
+                
+                if numero_matrices <= 0 or filas <= 0 or columnas <= 0:
+                    raise ValueError("El número de matrices, filas y columnas deben ser positivos.")
+                
+                # Configurar la tabla de matrices
+                self.tabla_matrices.setRowCount(filas * numero_matrices)
+                self.tabla_matrices.setColumnCount(columnas)
+                self.tabla_matrices.setHorizontalHeaderLabels([f"Columna {i + 1}" for i in range(columnas)])
+                self.tabla_matrices.setVerticalHeaderLabels([f"Matriz {i // filas + 1}, Fila {i % filas + 1}" for i in range(filas * numero_matrices)])
+
+                # Configurar la tabla de escalares
+                self.tabla_escalares.setRowCount(numero_matrices)
+                self.tabla_escalares.setColumnCount(1)
+                self.tabla_escalares.setHorizontalHeaderLabels(["Escalar"])
+                self.tabla_escalares.setVerticalHeaderLabels([f"Matriz {i + 1}" for i in range(numero_matrices)])
+                
+            except ValueError as e:
+                QMessageBox.critical(self, "Error", str(e))
+                
+    def calcular_suma(self):
+        try:
+            numero_matrices = int(self.input_matrices.text())
+            filas = int(self.input_filas.text())
+            columnas = int(self.input_columnas.text())
+                
+            lista_matrices = []
+            lista_escalares = []
+            
+            # Verificar captura correcta de matrices y escalares
+            print("Capturando matrices...")
+            for m in range(numero_matrices):
+                matriz = []
+                for i in range(filas):
+                    fila = []
+                    for j in range(columnas):
+                        item = self.tabla_matrices.item(m * filas + i, j)
+                        if item is None or not item.text():
+                            raise ValueError(f"Introduce un valor válido en la posición Matriz {m + 1}, Fila {i + 1}, Columna {j + 1}.")
+                        fila.append(float(item.text()))
+                    matriz.append(fila)
+                lista_matrices.append(Matriz(filas, matriz))
+                print(f"Matriz {m + 1}: {matriz}")
+                    
+                # Obtener el escalar correspondiente
+                item_escalar = self.tabla_escalares.item(m, 0)
+                if item_escalar is None or not item_escalar.text():
+                    raise ValueError(f"Introduce un escalar válido para la Matriz {m + 1}.")
+                lista_escalares.append(float(item_escalar.text()))
+                print(f"Escalar {m + 1}: {float(item_escalar.text())}")
+                
+            # Calcular la suma de matrices utilizando matriz.py
+            resultado = Matriz(filas, [[0] * columnas for _ in range(filas)])
+            for matriz, escalar in zip(lista_matrices, lista_escalares):
+                matriz_escalada = matriz.escalar_por_matriz(escalar)
+                resultado = resultado.suma(matriz_escalada)
+            
+            # Mostrar el resultado
+            print("Mostrando resultado...")
+            self.mostrar_resultado(resultado)
+        
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+                
+    def mostrar_resultado(self, matriz_resultante):
+        while self.frame_layout.count():
+            child = self.frame_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        # Formatear el resultado y mostrarlo
+        resultado_str = "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz_resultante.matriz])
+        label_resultado = QLabel(resultado_str, self)
+        label_resultado.setAlignment(Qt.AlignCenter)
+        label_resultado.setStyleSheet("""
+            font-size: 18px;
+            border: 1px solid #B0BEC5;
+            background-color: #FFFFFF;
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        self.frame_layout.addWidget(label_resultado)
+        print(f"Resultado:\n{resultado_str}")
+                
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
+        self.main_window.show()
+        self.close()
 
 def iniciar_menu():
     app = QApplication(sys.argv)

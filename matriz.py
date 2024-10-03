@@ -154,3 +154,28 @@ class Matriz:
         resultado += f"\nLas columnas pivote son: {', '.join(map(str, columnas_pivote))}.\n"
 
         return resultado
+    
+    def escalar_por_matriz(self, escalar):
+        """Multiplica la matriz actual por un escalar."""
+        resultado = []
+        for fila in self.matriz:
+            fila_resultado = [escalar * valor for valor in fila]
+            resultado.append(fila_resultado)
+        return Matriz(len(self.matriz), resultado)
+    
+    def suma(self, otra_matriz):
+        """Suma la matriz actual con otra matriz del mismo tamaño."""
+        if len(self.matriz) != len(otra_matriz.matriz) or len(self.matriz[0]) != len(otra_matriz.matriz[0]):
+            raise ValueError("Las matrices deben tener el mismo tamaño para sumarse.")
+        
+        resultado = []
+        for i in range(len(self.matriz)):
+            fila_resultado = []
+            for j in range(len(self.matriz[0])):
+                suma = self.matriz[i][j] + otra_matriz.matriz[i][j]
+                fila_resultado.append(suma)
+            resultado.append(fila_resultado)
+        
+        return Matriz(len(self.matriz), resultado)
+    
+    
