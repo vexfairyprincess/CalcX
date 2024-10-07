@@ -1,3 +1,5 @@
+#vector.py
+
 class Vector:
     """Clase para representar y operar con vectores de tamaño variable."""
 
@@ -41,7 +43,8 @@ class Vector:
         if len(self.componentes) != len(otro.componentes):
             raise ValueError("Los vectores deben tener la misma longitud.")
         return sum(a * b for a, b in zip(self.componentes, otro.componentes))
-
+    
+    @staticmethod
     def suma_escalada(lista_vectores, lista_escalars):
         # Suma una lista de vectores, cada uno escalado por un valor correspondiente de lista_escalars.
         if len(lista_vectores) != len(lista_escalars):
@@ -54,7 +57,8 @@ class Vector:
         for vector, escalar in zip(lista_vectores, lista_escalars):
             suma = [s + (escalar * v) for s, v in zip(suma, vector.componentes)]
         return Vector(suma)
-
+    
+    @staticmethod
     def crear_vector_desde_entrada(componentes):
         # Crea un vector asegurándose de que cada componente pueda ser convertido a float.
         try:

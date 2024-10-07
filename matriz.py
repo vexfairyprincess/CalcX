@@ -192,4 +192,23 @@ class Matriz:
         
         return Matriz(len(self.matriz), resultado)
     
-    
+    def calcular_transpuesta(self):
+        """
+        Calcula la transpuesta de la matriz.
+        :return: nueva instancia de Matriz que representa la matriz transpuesta
+        """
+        if not self.matriz or not self.matriz[0]:
+            raise ValueError("La matriz no puede estar vacía.")
+        
+        transpuesta = [[self.matriz[j][i] for j in range(self.n)] for i in range(len(self.matriz[0]))]
+        return Matriz(len(transpuesta), transpuesta)
+
+    def formatear_matriz(self):
+        """
+        Formatea la matriz para visualización en un string legible.
+        :return: string que muestra la matriz
+        """
+        texto_matriz = ""
+        for fila in self.matriz:
+            texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
+        return texto_matriz
