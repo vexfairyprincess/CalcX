@@ -2,7 +2,7 @@
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
-    QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView
+    QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView, QTableWidgetItem
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -85,6 +85,10 @@ class MenuAplicacion(QMainWindow):
         self.boton_transpuesta = QPushButton("Transpuesta de Matriz", self)
         self.boton_transpuesta.clicked.connect(self.abrir_transpuesta_matriz)
         self.layout.addWidget(self.boton_transpuesta)
+
+        self.boton_multiplicacion_matrices = QPushButton("Multiplicación de Matrices", self)
+        self.boton_multiplicacion_matrices.clicked.connect(self.abrir_multiplicacion_matrices)
+        self.layout.addWidget(self.boton_multiplicacion_matrices)
         
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
@@ -155,6 +159,12 @@ class MenuAplicacion(QMainWindow):
         self.ventana_transpuesta = VentanaTranspuesta(self.tamano_fuente)
         self.ventana_transpuesta.show()
         self.cambiar_fuente_signal.connect(self.ventana_transpuesta.actualizar_fuente_local)
+        self.close()
+
+    def abrir_multiplicacion_matrices(self):
+        self.ventana_multiplicacion = VentanaMultiplicacionMatrices(self.tamano_fuente)
+        self.ventana_multiplicacion.show()
+        self.cambiar_fuente_signal.connect(self.ventana_multiplicacion.actualizar_fuente_local)
         self.close()
         
     def limpiar_layout(self, layout):
@@ -1393,6 +1403,258 @@ class VentanaTranspuesta(QWidget):
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
         self.close()
+
+class VentanaMultiplicacionMatrices(QWidget):
+    def __init__(self, tamano_fuente):
+        super().__init__()
+        self.setWindowTitle("Multiplicación de Matrices")
+        
+        # Tamaño inicial redimensionable
+        self.resize(800, 600)
+        
+        # Fuente
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+        
+        # Layout principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        # Layout para entrada de número de matrices
+        self.layout_entrada = QHBoxLayout()
+        self.layout.addLayout(self.layout_entrada)
+        
+        # Número de matrices
+        self.label_matrices = QLabel("Número de Matrices:", self)
+        self.layout_entrada.addWidget(self.label_matrices)
+        self.input_matrices = QLineEdit(self)
+        self.input_matrices.setFixedWidth(70)
+        self.layout_entrada.addWidget(self.input_matrices)
+        
+        # Botón Crear Entradas
+        self.boton_crear_matrices = QPushButton("Crear Entradas", self)
+        self.boton_crear_matrices.setFixedWidth(180)
+        self.boton_crear_matrices.clicked.connect(self.crear_entradas_matrices)
+        self.layout_entrada.addWidget(self.boton_crear_matrices)
+        
+        # Espaciador
+        self.layout_entrada.addStretch()
+        
+        # Área de matrices
+        self.scroll_area_matrices = QScrollArea(self)
+        self.scroll_area_matrices.setWidgetResizable(True)
+        self.widget_matrices = QWidget()
+        self.layout_matrices = QVBoxLayout()
+        self.widget_matrices.setLayout(self.layout_matrices)
+        self.scroll_area_matrices.setWidget(self.widget_matrices)
+        self.layout.addWidget(self.scroll_area_matrices)
+        
+        # Botones de validación y cálculo
+        self.layout_botones = QHBoxLayout()
+        self.layout.addLayout(self.layout_botones)
+
+        # Botón para confirmar validez
+        self.boton_confirmar_validez = QPushButton("Confirmar Validez")
+        self.boton_confirmar_validez.clicked.connect(self.verificar_dimensiones)
+        self.layout_botones.addWidget(self.boton_confirmar_validez, alignment=Qt.AlignCenter)
+
+        # Botón para calcular el producto
+        self.boton_calcular_producto = QPushButton("Calcular Producto")
+        self.boton_calcular_producto.clicked.connect(self.calcular_producto)
+        self.boton_calcular_producto.setEnabled(False)  # Deshabilitado hasta que se confirme la validez
+        self.layout_botones.addWidget(self.boton_calcular_producto, alignment=Qt.AlignCenter)
+        
+        # Botón para alternar vista de paso a paso y solo resultado
+        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso")
+        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
+        self.boton_paso_a_paso.hide()
+        self.layout_botones.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
+        
+        # Área de resultados
+        self.texto_resultado = QTextEdit(self)
+        self.texto_resultado.setReadOnly(True)
+        self.texto_resultado.setStyleSheet("background-color: #FAFAFA; padding: 10px;")
+        self.texto_resultado.setMinimumHeight(250)
+        self.layout.addWidget(self.texto_resultado)
+        
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(250)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+        # Variables para almacenar los pasos y el resultado
+        self.resultado_pasos = ""
+        self.resultado_final = ""
+        self.modo_paso_a_paso = False
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualiza el estilo y tamaño de fuente localmente."""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+        """)
+
+    def crear_entradas_matrices(self):
+        try:
+            numero_matrices = int(self.input_matrices.text())
+            if numero_matrices < 2:
+                raise ValueError("Se necesitan al menos dos matrices para la multiplicación.")
+
+            # Limpiar layout de matrices
+            for i in reversed(range(self.layout_matrices.count())):
+                widget = self.layout_matrices.takeAt(i).widget()
+                if widget:
+                    widget.deleteLater()
+
+            self.matrices_widgets = []
+            self.matrices_dimensiones = []
+
+            for i in range(numero_matrices):
+                layout = QVBoxLayout()
+                label_matriz = QLabel(f"Matriz {i + 1}")
+                layout.addWidget(label_matriz)
+
+                # Entradas para dimensiones de la matriz
+                layout_dimensiones = QHBoxLayout()
+                input_filas = QLineEdit()
+                input_filas.setPlaceholderText("Filas")
+                input_filas.setFixedWidth(70)
+                layout_dimensiones.addWidget(input_filas)
+
+                input_columnas = QLineEdit()
+                input_columnas.setPlaceholderText("Columnas")
+                input_columnas.setFixedWidth(70)
+                layout_dimensiones.addWidget(input_columnas)
+
+                layout.addLayout(layout_dimensiones)
+                self.matrices_dimensiones.append((input_filas, input_columnas))
+
+                # Tabla de matriz
+                tabla_matriz = QTableWidget()
+                tabla_matriz.setFixedWidth(600)
+                tabla_matriz.setFixedHeight(150)
+                layout.addWidget(tabla_matriz)
+                self.matrices_widgets.append(tabla_matriz)
+                
+                self.layout_matrices.addLayout(layout)
+            
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def verificar_dimensiones(self):
+        try:
+            matrices = []
+            for filas_input, columnas_input in self.matrices_dimensiones:
+                filas = int(filas_input.text())
+                columnas = int(columnas_input.text())
+                matrices.append((filas, columnas))
+
+            # Verificar compatibilidad para multiplicación secuencial
+            for i in range(len(matrices) - 1):
+                if matrices[i][1] != matrices[i + 1][0]:
+                    self.boton_calcular_producto.setEnabled(False)
+                    raise ValueError("Las dimensiones de las matrices no permiten multiplicación en serie. "
+                                    f"La Matriz {i+1} tiene {matrices[i][1]} columnas y "
+                                    f"la Matriz {i+2} tiene {matrices[i+1][0]} filas.")
+
+            # Si son compatibles, configurar las tablas para recibir entradas
+            for tabla, (filas_input, columnas_input) in zip(self.matrices_widgets, self.matrices_dimensiones):
+                filas = int(filas_input.text())
+                columnas = int(columnas_input.text())
+                tabla.setRowCount(filas)
+                tabla.setColumnCount(columnas)
+
+                # Habilitar edición en las celdas de la tabla
+                for i in range(filas):
+                    for j in range(columnas):
+                        tabla.setItem(i, j, QTableWidgetItem())
+                        tabla.item(i, j).setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+            # Habilitar el botón para calcular el producto si las dimensiones son correctas
+            self.boton_calcular_producto.setEnabled(True)
+            QMessageBox.information(self, "Dimensiones Válidas", "Las dimensiones de las matrices son compatibles para multiplicación.")
+            
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.boton_calcular_producto.setEnabled(False)
+
+    def calcular_producto(self):
+        try:
+            matrices = []
+            for tabla, (filas_input, columnas_input) in zip(self.matrices_widgets, self.matrices_dimensiones):
+                filas = int(filas_input.text())
+                columnas = int(columnas_input.text())
+                
+                matriz = []
+                for i in range(filas):
+                    fila = []
+                    for j in range(columnas):
+                        item = tabla.item(i, j)
+                        if item is None or not item.text():
+                            raise ValueError(f"Introduce un valor válido en la posición ({i+1}, {j+1}).")
+                        fila.append(float(item.text()))
+                    matriz.append(fila)
+                
+                matrices.append(Matriz(filas, matriz))
+
+            # Inicializar la multiplicación paso a paso
+            resultado = matrices[0]
+            pasos = "Proceso de Multiplicación de Matrices:\n\n"
+            
+            for i in range(1, len(matrices)):
+                matriz_b = matrices[i]
+                resultado_nuevo = []
+                
+                # Realizar la multiplicación con la matriz actual
+                for r in range(len(resultado.matriz)):
+                    nueva_fila = []
+                    for c in range(len(matriz_b.matriz[0])):
+                        # Calcular el valor de cada elemento de la matriz resultante
+                        suma = sum(resultado.matriz[r][k] * matriz_b.matriz[k][c] for k in range(len(matriz_b.matriz)))
+                        detalle_operacion = " + ".join([f"{resultado.matriz[r][k]}*{matriz_b.matriz[k][c]}" for k in range(len(matriz_b.matriz))])
+                        pasos += f"Elemento ({r+1}, {c+1}): {detalle_operacion} = {suma:.2f}\n"
+                        nueva_fila.append(suma)
+                    resultado_nuevo.append(nueva_fila)
+                
+                # Actualizar el resultado con la nueva matriz calculada
+                resultado = Matriz(len(resultado_nuevo), resultado_nuevo)
+                pasos += "\nPaso {}: Resultado parcial después de multiplicar con Matriz {}\n".format(i, i + 1)
+                pasos += resultado.formatear_matriz() + "\n\n"
+
+            # Almacenar el resultado final
+            self.resultado_final = f"Resultado final:\n{resultado.formatear_matriz()}"
+            self.resultado_pasos = pasos + "\n" + self.resultado_final
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.show()
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def cambiar_modo(self):
+        if self.modo_paso_a_paso:
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+        else:
+            self.texto_resultado.setText(self.resultado_pasos)
+            self.boton_paso_a_paso.setText("Mostrar Solo Respuesta")
+        self.modo_paso_a_paso = not self.modo_paso_a_paso
+
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
+        self.main_window.show()
+        self.close()
+
 
 def iniciar_menu():
     app = QApplication(sys.argv)

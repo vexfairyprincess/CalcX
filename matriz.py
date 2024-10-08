@@ -1,3 +1,5 @@
+#matriz.py
+
 class Matriz:
     """
     Clase que representa una matriz y permite realizar eliminación Gaussiana.
@@ -212,3 +214,23 @@ class Matriz:
         for fila in self.matriz:
             texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
         return texto_matriz
+    
+    def multiplicar_por(self, otra_matriz):
+        """
+        Multiplica la matriz actual por otra matriz si las dimensiones son compatibles.
+        :param otra_matriz: instancia de Matriz que será multiplicada con la matriz actual
+        :return: nueva instancia de Matriz que representa el producto de las dos matrices
+        """
+        if len(self.matriz[0]) != len(otra_matriz.matriz):
+            raise ValueError("El número de columnas de la primera matriz debe coincidir con el número de filas de la segunda matriz.")
+        
+        # Inicializar la matriz resultado con ceros
+        resultado = [[0] * len(otra_matriz.matriz[0]) for _ in range(len(self.matriz))]
+        
+        # Multiplicar matrices
+        for i in range(len(self.matriz)):
+            for j in range(len(otra_matriz.matriz[0])):
+                for k in range(len(otra_matriz.matriz)):
+                    resultado[i][j] += self.matriz[i][k] * otra_matriz.matriz[k][j]
+        
+        return Matriz(len(resultado), resultado)
