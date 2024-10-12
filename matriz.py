@@ -234,3 +234,63 @@ class Matriz:
                     resultado[i][j] += self.matriz[i][k] * otra_matriz.matriz[k][j]
         
         return Matriz(len(resultado), resultado)
+    
+    def calcular_determinante(self, paso_a_paso=False):
+        """
+        Calcula el determinante de la matriz utilizando el método de eliminación Gaussiana.
+        :param paso_a_paso: si es True, guarda cada paso de la eliminación
+        :return: tupla con el determinante y los pasos como un string
+        :raises ValueError: si la matriz no es cuadrada
+        """
+        if len(self.matriz) != len(self.matriz[0]):
+            raise ValueError("El determinante solo se puede calcular para matrices cuadradas.")
+
+        n = len(self.matriz)
+        # Copia la matriz para no modificar la original
+        matriz_temp = [fila[:] for fila in self.matriz]
+        determinante = 1
+        pasos = "" if paso_a_paso else None
+
+        for i in range(n):
+            # Encontrar el pivote más grande en la columna actual
+            max_row = max(range(i, n), key=lambda x: abs(matriz_temp[x][i]))
+            if abs(matriz_temp[max_row][i]) < 1e-10:
+                return 0, pasos if paso_a_paso else 0  # Si el pivote es 0, el determinante es 0
+
+            # Intercambiar filas si el pivote no está en la fila actual
+            if i != max_row:
+                matriz_temp[i], matriz_temp[max_row] = matriz_temp[max_row], matriz_temp[i]
+                determinante *= -1  # Cambia de signo el determinante por el intercambio
+                if paso_a_paso:
+                    pasos += f"Intercambio de filas {i + 1} y {max_row + 1} cambia el signo del determinante.\n"
+                    pasos += self.formatear_matriz(matriz_temp) + "\n"
+
+            # Multiplicar el elemento diagonal al determinante
+            pivote = matriz_temp[i][i]
+            determinante *= pivote
+            if paso_a_paso:
+                pasos += f"Multiplicando por el pivote {pivote:.2f} en la posición ({i + 1}, {i + 1}) acumula el determinante: {determinante:.2f}\n"
+                pasos += self.formatear_matriz(matriz_temp) + "\n"
+
+            # Hacer el pivote igual a 1 y reducir las filas debajo de la fila actual
+            for j in range(i + 1, n):
+                factor = matriz_temp[j][i] / pivote
+                for k in range(i, n):
+                    matriz_temp[j][k] -= factor * matriz_temp[i][k]
+
+                if paso_a_paso:
+                    pasos += f"Reduciendo Fila {j + 1}: F{j + 1} -> F{j + 1} - ({factor:.2f}) * F{i + 1}\n"
+                    pasos += self.formatear_matriz(matriz_temp) + "\n"
+
+        # Después de reducir la matriz, el determinante final es el producto de los elementos de la diagonal.
+        if paso_a_paso:
+            pasos += f"\nDeterminante final (producto de los elementos de la diagonal): {determinante:.2f}\n"
+
+        return determinante, pasos if paso_a_paso else determinante
+
+    def formatear_matriz(self, matriz):
+        """Convierte una matriz en una representación string para mostrar los pasos"""
+        texto_matriz = ""
+        for fila in matriz:
+            texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
+        return texto_matriz
