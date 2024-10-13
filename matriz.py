@@ -39,6 +39,13 @@ class Matriz:
             texto += "  ".join(f"{valor:.2f}" for valor in fila) + "\n"  # Formato de cada fila con dos decimales
         texto += "\n"
         return texto
+    
+    def formatear_matriz(self):
+        """Formatea la matriz para visualización en un string legible."""
+        texto_matriz = ""
+        for fila in self.matriz:
+            texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
+        return texto_matriz
 
     def eliminacion_gaussiana(self):
         """
@@ -204,16 +211,6 @@ class Matriz:
         
         transpuesta = [[self.matriz[j][i] for j in range(self.n)] for i in range(len(self.matriz[0]))]
         return Matriz(len(transpuesta), transpuesta)
-
-    def formatear_matriz(self):
-        """
-        Formatea la matriz para visualización en un string legible.
-        :return: string que muestra la matriz
-        """
-        texto_matriz = ""
-        for fila in self.matriz:
-            texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
-        return texto_matriz
     
     def multiplicar_por(self, otra_matriz):
         """
@@ -263,14 +260,14 @@ class Matriz:
                 determinante *= -1  # Cambia de signo el determinante por el intercambio
                 if paso_a_paso:
                     pasos += f"Intercambio de filas {i + 1} y {max_row + 1} cambia el signo del determinante.\n"
-                    pasos += self.formatear_matriz(matriz_temp) + "\n"
+                    pasos += self.formatear_matriz() + "\n"
 
             # Multiplicar el elemento diagonal al determinante
             pivote = matriz_temp[i][i]
             determinante *= pivote
             if paso_a_paso:
                 pasos += f"Multiplicando por el pivote {pivote:.2f} en la posición ({i + 1}, {i + 1}) acumula el determinante: {determinante:.2f}\n"
-                pasos += self.formatear_matriz(matriz_temp) + "\n"
+                pasos += self.formatear_matriz() + "\n"
 
             # Hacer el pivote igual a 1 y reducir las filas debajo de la fila actual
             for j in range(i + 1, n):
@@ -280,20 +277,13 @@ class Matriz:
 
                 if paso_a_paso:
                     pasos += f"Reduciendo Fila {j + 1}: F{j + 1} -> F{j + 1} - ({factor:.2f}) * F{i + 1}\n"
-                    pasos += self.formatear_matriz(matriz_temp) + "\n"
+                    pasos += self.formatear_matriz() + "\n"
 
         # Después de reducir la matriz, el determinante final es el producto de los elementos de la diagonal.
         if paso_a_paso:
             pasos += f"\nDeterminante final (producto de los elementos de la diagonal): {determinante:.2f}\n"
 
         return determinante, pasos if paso_a_paso else determinante
-
-    def formatear_matriz(self, matriz):
-        """Convierte una matriz en una representación string para mostrar los pasos"""
-        texto_matriz = ""
-        for fila in matriz:
-            texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
-        return texto_matriz
     
     def calcular_inversa(self, paso_a_paso=False):
         """
@@ -322,14 +312,14 @@ class Matriz:
                 matriz_temp[i], matriz_temp[max_row] = matriz_temp[max_row], matriz_temp[i]
                 if paso_a_paso:
                     pasos += f"Intercambio de filas {i + 1} y {max_row + 1}:\n"
-                    pasos += self.formatear_matriz(matriz_temp) + "\n"
+                    pasos += self.formatear_matriz() + "\n"
 
             # Normalizar la fila del pivote
             pivote = matriz_temp[i][i]
             matriz_temp[i] = [elemento / pivote for elemento in matriz_temp[i]]
             if paso_a_paso:
                 pasos += f"Dividiendo la fila {i + 1} por el pivote {pivote:.2f}:\n"
-                pasos += self.formatear_matriz(matriz_temp) + "\n"
+                pasos += self.formatear_matriz() + "\n"
 
             # Hacer ceros en las otras posiciones de la columna
             for j in range(n):
@@ -338,7 +328,7 @@ class Matriz:
                     matriz_temp[j] = [matriz_temp[j][k] - factor * matriz_temp[i][k] for k in range(2 * n)]
                     if paso_a_paso:
                         pasos += f"Reduciendo Fila {j + 1}: F{j + 1} -> F{j + 1} - ({factor:.2f}) * F{i + 1}\n"
-                        pasos += self.formatear_matriz(matriz_temp) + "\n"
+                        pasos += self.formatear_matriz() + "\n"
 
         # Extraer la matriz inversa del lado derecho
         inversa = [fila[n:] for fila in matriz_temp]

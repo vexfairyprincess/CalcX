@@ -1922,7 +1922,7 @@ class VentanaInversa(QWidget):
 
             matriz_obj = Matriz(n, matriz)
             inversa, pasos = matriz_obj.calcular_inversa(paso_a_paso=True)  # Llamada con paso_a_paso=True
-            self.resultado_final = "La inversa de la matriz es:\n" + inversa.formatear_matriz(inversa.matriz)
+            self.resultado_final = "La inversa de la matriz es:\n" + inversa.formatear_matriz()
             self.resultado_pasos = f"Pasos de cálculo:\n\n{pasos}\n\n{self.resultado_final}"
             self.texto_resultado.setText(self.resultado_final)
 
