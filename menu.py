@@ -1978,17 +1978,17 @@ class VentanaCramer(QWidget):
         self.texto_resultado.setReadOnly(True)
         self.layout.addWidget(self.texto_resultado)
 
-        # Botón para regresar al menú principal
-        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
-        self.boton_regresar.setFixedWidth(250)
-        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
-        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
-
         # Botón para alternar entre paso a paso y solo resultado
         self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso")
         self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
         self.boton_paso_a_paso.hide()
         self.layout.addWidget(self.boton_paso_a_paso)
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(250)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
 
         # Variables para almacenar los pasos
         self.resultado_pasos = ""
