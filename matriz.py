@@ -333,3 +333,47 @@ class Matriz:
         # Extraer la matriz inversa del lado derecho
         inversa = [fila[n:] for fila in matriz_temp]
         return (Matriz(n, inversa), pasos) if paso_a_paso else Matriz(n, inversa)
+    
+    def cramer(self, paso_a_paso=False):
+        """
+        Aplica la Regla de Cramer para resolver el sistema de ecuaciones.
+        :param paso_a_paso: si es True, guarda cada paso de la resolución.
+        :return: una lista con los valores de las incógnitas o una tupla con la lista y los pasos
+        :raises ValueError: si la matriz no es cuadrada o si el determinante es cero
+        """
+        n = len(self.matriz)
+        if n != len(self.matriz[0]) - 1:
+            raise ValueError("La matriz debe ser cuadrada con una columna extra para los resultados.")
+
+        # Calcular el determinante de la matriz principal
+        matriz_principal = [fila[:-1] for fila in self.matriz]
+        matriz_base = Matriz(n, matriz_principal)
+        det_base, pasos_base = matriz_base.calcular_determinante(paso_a_paso=True)
+        
+        if abs(det_base) < 1e-10:
+            raise ValueError("La Regla de Cramer no se puede aplicar: el determinante es cero.")
+
+        resultado_texto = f"Determinante de la matriz principal:\n{matriz_base.formatear_matriz()}"
+        resultado_texto += f"\nDeterminante |A| = {det_base:.2f}\n\n"
+        
+        resultados = []
+        
+        for i in range(n):
+            # Crear la matriz modificada reemplazando la i-ésima columna con la columna de resultados
+            matriz_modificada = [fila[:-1] for fila in self.matriz]
+            for j in range(n):
+                matriz_modificada[j][i] = self.matriz[j][-1]
+
+            matriz_modificada_obj = Matriz(n, matriz_modificada)
+            det_modificado, pasos_modificado = matriz_modificada_obj.calcular_determinante(paso_a_paso=True)
+            valor_variable = det_modificado / det_base
+            resultados.append(valor_variable)
+
+            # Añadir detalles a los pasos
+            resultado_texto += f"\nMatriz |A{i+1}| al reemplazar la columna {i + 1}:\n{matriz_modificada_obj.formatear_matriz()}"
+            resultado_texto += f"\nDeterminante |A{i+1}| = {det_modificado:.2f}\n"
+            resultado_texto += f"x{i + 1} = |A{i+1}| / |A| = {det_modificado:.2f} / {det_base:.2f} = {valor_variable:.2f}\n\n"
+
+        if paso_a_paso:
+            return resultados, resultado_texto
+        return resultados

@@ -98,6 +98,10 @@ class MenuAplicacion(QMainWindow):
         self.boton_inversa.clicked.connect(self.abrir_inversa_matriz)
         self.layout.addWidget(self.boton_inversa)
         
+        self.boton_cramer = QPushButton("Resolver con Regla de Cramer", self)
+        self.boton_cramer.clicked.connect(self.abrir_cramer)
+        self.layout.addWidget(self.boton_cramer)
+
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
@@ -185,6 +189,12 @@ class MenuAplicacion(QMainWindow):
         self.ventana_inversa = VentanaInversa(self.tamano_fuente)
         self.ventana_inversa.show()
         self.cambiar_fuente_signal.connect(self.ventana_inversa.actualizar_fuente_local)
+        self.close()
+
+    def abrir_cramer(self):
+        self.ventana_cramer = VentanaCramer(self.tamano_fuente)
+        self.ventana_cramer.show()
+        self.cambiar_fuente_signal.connect(self.ventana_cramer.actualizar_fuente_local)
         self.close()
 
     def limpiar_layout(self, layout):
@@ -1950,6 +1960,133 @@ class VentanaInversa(QWidget):
         self.main_window.show()
         self.close()
 
+class VentanaCramer(QWidget):
+    def __init__(self, tamano_fuente):
+        super().__init__()
+        self.setWindowTitle("Resolver Sistema con la Regla de Cramer")
+        self.setGeometry(100, 100, 800, 600)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+        self.modo_paso_a_paso = False  # Estado inicial
+
+        # Layout principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        # Entrada de tamaño de la matriz
+        self.layout_entrada = QHBoxLayout()
+        self.label_dimension = QLabel("Tamaño de la Matriz (n x n):", self)
+        self.input_dimension = QLineEdit(self)
+        self.input_dimension.setFixedWidth(60)
+        self.boton_crear_matriz = QPushButton("Crear Sistema", self)
+        self.boton_crear_matriz.setFixedWidth(150)
+        self.boton_crear_matriz.clicked.connect(self.crear_matriz)
+
+        self.layout_entrada.addWidget(self.label_dimension)
+        self.layout_entrada.addWidget(self.input_dimension)
+        self.layout_entrada.addWidget(self.boton_crear_matriz)
+        self.layout.addLayout(self.layout_entrada)
+
+        # Tabla para introducir el sistema
+        self.tabla_matriz = QTableWidget(self)
+        self.layout.addWidget(self.tabla_matriz)
+
+        # Botón para aplicar la regla de Cramer
+        self.boton_calcular = QPushButton("Aplicar Regla de Cramer", self)
+        self.boton_calcular.clicked.connect(self.aplicar_cramer)
+        self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+
+        # Botón para alternar modo
+        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso", self)
+        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
+        self.boton_paso_a_paso.hide()
+        self.layout.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
+
+        # Área de resultados
+        self.texto_resultado = QTextEdit(self)
+        self.texto_resultado.setReadOnly(True)
+        self.layout.addWidget(self.texto_resultado)
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+    def actualizar_fuente_local(self, tamano):
+        # Método para actualizar el tamaño de fuente local
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+        """)
+
+    def crear_matriz(self):
+        try:
+            n = int(self.input_dimension.text())
+            if n <= 0:
+                raise ValueError("El tamaño debe ser un número positivo.")
+            
+            # Configurar la tabla para el sistema de ecuaciones
+            self.tabla_matriz.setRowCount(n)
+            self.tabla_matriz.setColumnCount(n + 1)
+            self.tabla_matriz.setHorizontalHeaderLabels([f"x{i+1}" for i in range(n)] + ["Resultado"])
+            self.tabla_matriz.setVerticalHeaderLabels([f"Ecuación {i+1}" for i in range(n)])
+        
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def aplicar_cramer(self):
+        try:
+            n = self.tabla_matriz.rowCount()
+            matriz = []
+            for i in range(n):
+                fila = []
+                for j in range(n + 1):
+                    item = self.tabla_matriz.item(i, j)
+                    if item is None or not item.text():
+                        raise ValueError(f"Introduce un valor válido en la posición ({i+1}, {j+1}).")
+                    fila.append(float(item.text()))
+                matriz.append(fila)
+
+            matriz_obj = Matriz(n, matriz)
+            resultados, pasos = matriz_obj.cramer(paso_a_paso=True)
+            
+            # Almacenar los resultados y pasos
+            self.resultado_final = "Soluciones del sistema:\n" + "\n".join([f"x{i+1} = {resultado:.2f}" for i, resultado in enumerate(resultados)])
+            self.resultado_pasos = pasos + "\n" + self.resultado_final
+            
+            # Mostrar solo la respuesta inicial
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+            self.boton_paso_a_paso.show()
+            self.modo_paso_a_paso = False
+        
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def cambiar_modo(self):
+        # Alternar entre los modos y actualizar el texto mostrado
+        if self.modo_paso_a_paso:
+            self.texto_resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+        else:
+            self.texto_resultado.setText(self.resultado_pasos)
+            self.boton_paso_a_paso.setText("Mostrar Solo Respuesta")
+        self.modo_paso_a_paso = not self.modo_paso_a_paso
+        
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
+        self.main_window.show()
+        self.close()
 
 def iniciar_menu():
     app = QApplication(sys.argv)
