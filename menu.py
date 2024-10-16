@@ -1,5 +1,7 @@
 # menu.py
 
+from utils import evaluar_expresion
+
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
     QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView, QTableWidgetItem
@@ -382,16 +384,13 @@ class VentanaEscalonado(QWidget):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}).")
-                    valor = float(item.text())
+                    valor = evaluar_expresion(item.text())  # Evalúa la expresión
                     fila.append(valor)
                 entradas.append(fila)
 
-            # Calcular el método escalonado
             matriz = Matriz(n, entradas)
             self.resultado_pasos = matriz.eliminacion_gaussiana()
             self.resultado_final = matriz.interpretar_resultado()
-            
-            # Mostrar resultado simplificado
             self.texto_resultado.setText(self.resultado_final)
             self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
             self.boton_paso_a_paso.show()
@@ -585,7 +584,7 @@ class VentanaOperacionesCombinadas(QWidget):
                     item = self.tabla_vectores.item(j, i)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición Vector {i + 1}, Componente {j + 1}.")
-                    componentes.append(item.text())
+                    componentes.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                 vector = Vector.crear_vector_desde_entrada(componentes)
                 lista_vectores.append(vector)
 
@@ -593,10 +592,9 @@ class VentanaOperacionesCombinadas(QWidget):
                 item_escalar = self.tabla_escalars.item(i, 0)
                 if item_escalar is None or not item_escalar.text():
                     raise ValueError(f"Introduce un escalar válido para el Vector {i + 1}.")
-                escalar = float(item_escalar.text())
+                escalar = evaluar_expresion(item_escalar.text())  # Evalúa la expresión
                 lista_escalars.append(escalar)
 
-            # Calcular la suma escalada de los vectores utilizando vector.py
             resultado = Vector.suma_escalada(lista_vectores, lista_escalars)
 
             # Limpiar el layout anterior de manera segura
@@ -823,21 +821,18 @@ class VentanaProductoVectorial(QWidget):
             vector_fila = []
             vector_columna = []
 
-            # Leer componentes del vector fila
             for i in range(dimension):
                 item = self.tabla_vector_fila.item(0, i)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Fila, Componente {i + 1}.")
-                vector_fila.append(float(item.text()))
+                vector_fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
 
-            # Leer componentes del vector columna
             for i in range(dimension):
                 item = self.tabla_vector_columna.item(i, 0)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición Vector Columna, Componente {i + 1}.")
-                vector_columna.append(float(item.text()))
+                vector_columna.append(evaluar_expresion(item.text()))  # Evalúa la expresión
 
-            # Realizar el cálculo del producto escalar
             vector_obj_fila = Vector(vector_fila)
             vector_obj_columna = Vector(vector_columna)
             producto = vector_obj_fila.producto_punto(vector_obj_columna)
@@ -997,10 +992,6 @@ class VentanaProductoMatrizVector(QWidget):
             filas = self.tabla_matriz.rowCount()
             columnas = self.tabla_matriz.columnCount()
 
-            if filas == 0 or columnas == 0:
-                raise ValueError("Primero debes crear la matriz y los vectores.")
-
-            # Leer matriz
             matriz = []
             for i in range(filas):
                 fila = []
@@ -1008,26 +999,23 @@ class VentanaProductoMatrizVector(QWidget):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}) de la matriz.")
-                    fila.append(float(item.text()))
+                    fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                 matriz.append(fila)
 
-            # Leer vector u
             vector_u = []
             for i in range(columnas):
                 item = self.tabla_vector_u.item(i, 0)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición ({i + 1}) del vector u.")
-                vector_u.append(float(item.text()))
+                vector_u.append(evaluar_expresion(item.text()))  # Evalúa la expresión
 
-            # Leer vector v
             vector_v = []
             for i in range(columnas):
                 item = self.tabla_vector_v.item(i, 0)
                 if item is None or not item.text():
                     raise ValueError(f"Introduce un valor válido en la posición ({i + 1}) del vector v.")
-                vector_v.append(float(item.text()))
+                vector_v.append(evaluar_expresion(item.text()))  # Evalúa la expresión
 
-            # Crear instancia de MxV y aplicar propiedad
             mxv = MxV(matriz=matriz, vectores=[vector_u, vector_v])
             Au, Av, A_u_plus_v = mxv.aplicar_propiedad()
 
@@ -1250,7 +1238,6 @@ class VentanaSumaMatrices(QWidget):
     
     def calcular_suma(self):
         try:
-            # Verificación y captura de matrices y escalares
             numero_matrices = int(self.input_matrices.text())
             filas = int(self.input_filas.text())
             columnas = int(self.input_columnas.text())
@@ -1266,15 +1253,15 @@ class VentanaSumaMatrices(QWidget):
                         item = self.tabla_matrices.item(m * filas + i, j)
                         if item is None or not item.text():
                             raise ValueError(f"Introduce un valor válido en la posición Matriz {m + 1}, Fila {i + 1}, Columna {j + 1}.")
-                        fila.append(float(item.text()))
+                        fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                     matriz.append(fila)
                 lista_matrices.append(Matriz(filas, matriz))
                 item_escalar = self.tabla_escalares.item(m, 0)
                 if item_escalar is None or not item_escalar.text():
                     raise ValueError(f"Introduce un escalar válido para la Matriz {m + 1}.")
-                lista_escalares.append(float(item_escalar.text()))
+                lista_escalares.append(evaluar_expresion(item_escalar.text()))  # Evalúa el escalar
 
-            # Cálculo paso a paso y resultado final
+            # Procesar la suma de matrices
             resultado = Matriz(filas, [[0] * columnas for _ in range(filas)])
             pasos = "Proceso de Suma de Matrices:\n\n"
             for index, (matriz, escalar) in enumerate(zip(lista_matrices, lista_escalares), 1):
@@ -1289,7 +1276,7 @@ class VentanaSumaMatrices(QWidget):
             self.resultado_pasos = pasos + "\n" + self.resultado_final
             self.texto_resultado.setText(self.resultado_final)
             self.boton_paso_a_paso.show()
-            
+
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
@@ -1408,7 +1395,6 @@ class VentanaTranspuesta(QWidget):
             filas = self.tabla_matriz.rowCount()
             columnas = self.tabla_matriz.columnCount()
             
-            # Captura la matriz desde la interfaz
             matriz = []
             for i in range(filas):
                 fila = []
@@ -1416,14 +1402,13 @@ class VentanaTranspuesta(QWidget):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición ({i+1}, {j+1}).")
-                    fila.append(float(item.text()))
+                    fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                 matriz.append(fila)
             
-            # Crear objeto Matriz y calcular la transpuesta
             matriz_obj = Matriz(filas, matriz)
             matriz_transpuesta = matriz_obj.calcular_transpuesta()
             self.texto_resultado.setText("Matriz Transpuesta:\n" + matriz_transpuesta.formatear_matriz())
-        
+
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
@@ -1631,12 +1616,11 @@ class VentanaMultiplicacionMatrices(QWidget):
                         item = tabla.item(i, j)
                         if item is None or not item.text():
                             raise ValueError(f"Introduce un valor válido en la posición ({i+1}, {j+1}).")
-                        fila.append(float(item.text()))
+                        fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                     matriz.append(fila)
                 
                 matrices.append(Matriz(filas, matriz))
 
-            # Inicializar la multiplicación paso a paso
             resultado = matrices[0]
             pasos = "Proceso de Multiplicación de Matrices:\n\n"
             
@@ -1644,23 +1628,19 @@ class VentanaMultiplicacionMatrices(QWidget):
                 matriz_b = matrices[i]
                 resultado_nuevo = []
                 
-                # Realizar la multiplicación con la matriz actual
                 for r in range(len(resultado.matriz)):
                     nueva_fila = []
                     for c in range(len(matriz_b.matriz[0])):
-                        # Calcular el valor de cada elemento de la matriz resultante
                         suma = sum(resultado.matriz[r][k] * matriz_b.matriz[k][c] for k in range(len(matriz_b.matriz)))
                         detalle_operacion = " + ".join([f"{resultado.matriz[r][k]}*{matriz_b.matriz[k][c]}" for k in range(len(matriz_b.matriz))])
                         pasos += f"Elemento ({r+1}, {c+1}): {detalle_operacion} = {suma:.2f}\n"
                         nueva_fila.append(suma)
                     resultado_nuevo.append(nueva_fila)
                 
-                # Actualizar el resultado con la nueva matriz calculada
                 resultado = Matriz(len(resultado_nuevo), resultado_nuevo)
                 pasos += "\nPaso {}: Resultado parcial después de multiplicar con Matriz {}\n".format(i, i + 1)
                 pasos += resultado.formatear_matriz() + "\n\n"
 
-            # Almacenar el resultado final
             self.resultado_final = f"Resultado final:\n{resultado.formatear_matriz()}"
             self.resultado_pasos = pasos + "\n" + self.resultado_final
             self.texto_resultado.setText(self.resultado_final)
@@ -1789,7 +1769,7 @@ class VentanaDeterminante(QWidget):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}).")
-                    fila.append(float(item.text()))
+                    fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                 matriz.append(fila)
 
             matriz_obj = Matriz(n, matriz)
@@ -1797,9 +1777,6 @@ class VentanaDeterminante(QWidget):
             self.resultado_final = f"El determinante de la matriz es: {determinante:.2f}"
             self.resultado_pasos = f"Pasos de cálculo:\n\n{pasos}\n\n{self.resultado_final}"
             self.texto_resultado.setText(self.resultado_final)
-
-            # Mostrar botón para alternar entre modos
-            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
             self.boton_paso_a_paso.show()
             self.modo_paso_a_paso = False
 
@@ -1927,17 +1904,14 @@ class VentanaInversa(QWidget):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
                         raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}).")
-                    fila.append(float(item.text()))
+                    fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
                 matriz.append(fila)
 
             matriz_obj = Matriz(n, matriz)
-            inversa, pasos = matriz_obj.calcular_inversa(paso_a_paso=True)  # Llamada con paso_a_paso=True
+            inversa, pasos = matriz_obj.calcular_inversa(paso_a_paso=True)
             self.resultado_final = "La inversa de la matriz es:\n" + inversa.formatear_matriz()
             self.resultado_pasos = f"Pasos de cálculo:\n\n{pasos}\n\n{self.resultado_final}"
             self.texto_resultado.setText(self.resultado_final)
-
-            # Mostrar botón para alternar entre modos
-            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
             self.boton_paso_a_paso.show()
             self.modo_paso_a_paso = False
 
@@ -1963,23 +1937,20 @@ class VentanaInversa(QWidget):
 class VentanaCramer(QWidget):
     def __init__(self, tamano_fuente):
         super().__init__()
-        self.setWindowTitle("Resolver Sistema con la Regla de Cramer")
-        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle("Resolver Sistema con Regla de Cramer")
+        self.setGeometry(100, 100, 1000, 600)
         self.tamano_fuente = tamano_fuente
         self.actualizar_fuente_local(self.tamano_fuente)
-        self.modo_paso_a_paso = False  # Estado inicial
-
+        
         # Layout principal
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        # Entrada de tamaño de la matriz
+        # Entrada para el tamaño de la matriz
         self.layout_entrada = QHBoxLayout()
-        self.label_dimension = QLabel("Tamaño de la Matriz (n x n):", self)
-        self.input_dimension = QLineEdit(self)
-        self.input_dimension.setFixedWidth(60)
-        self.boton_crear_matriz = QPushButton("Crear Sistema", self)
-        self.boton_crear_matriz.setFixedWidth(150)
+        self.label_dimension = QLabel("Tamaño de la Matriz (n x n):")
+        self.input_dimension = QLineEdit()
+        self.boton_crear_matriz = QPushButton("Crear Matriz")
         self.boton_crear_matriz.clicked.connect(self.crear_matriz)
 
         self.layout_entrada.addWidget(self.label_dimension)
@@ -1987,33 +1958,44 @@ class VentanaCramer(QWidget):
         self.layout_entrada.addWidget(self.boton_crear_matriz)
         self.layout.addLayout(self.layout_entrada)
 
-        # Tabla para introducir el sistema
-        self.tabla_matriz = QTableWidget(self)
+        # Matriz de coeficientes
+        self.tabla_matriz = QTableWidget()
         self.layout.addWidget(self.tabla_matriz)
 
-        # Botón para aplicar la regla de Cramer
-        self.boton_calcular = QPushButton("Aplicar Regla de Cramer", self)
+        # Vector de resultados (tabla de una sola columna)
+        self.tabla_resultados = QTableWidget()
+        self.tabla_resultados.setColumnCount(1)
+        self.tabla_resultados.setHorizontalHeaderLabels(["Resultado"])
+        self.layout.addWidget(self.tabla_resultados)
+
+        # Botón para calcular la regla de Cramer
+        self.boton_calcular = QPushButton("Calcular")
         self.boton_calcular.clicked.connect(self.aplicar_cramer)
-        self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+        self.layout.addWidget(self.boton_calcular)
 
-        # Botón para alternar modo
-        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso", self)
-        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
-        self.boton_paso_a_paso.hide()
-        self.layout.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
-
-        # Área de resultados
-        self.texto_resultado = QTextEdit(self)
+        # Área para mostrar los resultados
+        self.texto_resultado = QTextEdit()
         self.texto_resultado.setReadOnly(True)
         self.layout.addWidget(self.texto_resultado)
 
         # Botón para regresar al menú principal
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
 
+        # Botón para alternar entre paso a paso y solo resultado
+        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso")
+        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
+        self.boton_paso_a_paso.hide()
+        self.layout.addWidget(self.boton_paso_a_paso)
+
+        # Variables para almacenar los pasos
+        self.resultado_pasos = ""
+        self.resultado_final = ""
+        self.modo_paso_a_paso = False
+
     def actualizar_fuente_local(self, tamano):
-        # Método para actualizar el tamaño de fuente local
         self.setStyleSheet(f"""
             QLabel {{
                 font-size: {tamano + 2}px;
@@ -2031,48 +2013,57 @@ class VentanaCramer(QWidget):
         try:
             n = int(self.input_dimension.text())
             if n <= 0:
-                raise ValueError("El tamaño debe ser un número positivo.")
+                raise ValueError("El tamaño de la matriz debe ser positivo.")
             
-            # Configurar la tabla para el sistema de ecuaciones
+            # Configuración de tabla de coeficientes
             self.tabla_matriz.setRowCount(n)
-            self.tabla_matriz.setColumnCount(n + 1)
-            self.tabla_matriz.setHorizontalHeaderLabels([f"x{i+1}" for i in range(n)] + ["Resultado"])
-            self.tabla_matriz.setVerticalHeaderLabels([f"Ecuación {i+1}" for i in range(n)])
-        
+            self.tabla_matriz.setColumnCount(n)
+            self.tabla_matriz.setHorizontalHeaderLabels([f"Columna {i + 1}" for i in range(n)])
+            self.tabla_matriz.setVerticalHeaderLabels([f"Fila {i + 1}" for i in range(n)])
+            
+            # Configuración de tabla de resultados
+            self.tabla_resultados.setRowCount(n)
+            self.tabla_resultados.setVerticalHeaderLabels([f"Resultado {i + 1}" for i in range(n)])
+
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
     def aplicar_cramer(self):
         try:
             n = self.tabla_matriz.rowCount()
-            matriz = []
+            entradas = []
             for i in range(n):
                 fila = []
-                for j in range(n + 1):
+                for j in range(n):
                     item = self.tabla_matriz.item(i, j)
                     if item is None or not item.text():
-                        raise ValueError(f"Introduce un valor válido en la posición ({i+1}, {j+1}).")
-                    fila.append(float(item.text()))
-                matriz.append(fila)
+                        raise ValueError(f"Introduce un valor válido en la posición ({i + 1}, {j + 1}).")
+                    fila.append(evaluar_expresion(item.text()))  # Evalúa la expresión
+                entradas.append(fila)
 
-            matriz_obj = Matriz(n, matriz)
-            resultados, pasos = matriz_obj.cramer(paso_a_paso=True)
+            resultados = []
+            for i in range(n):
+                item = self.tabla_resultados.item(i, 0)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor válido en el resultado de la fila {i + 1}.")
+                resultados.append(evaluar_expresion(item.text()))  # Evalúa la expresión
+
+            matriz_obj = Matriz(n, entradas)
+            soluciones, pasos = matriz_obj.cramer(resultados, paso_a_paso=True)
+            resultado_texto = "Soluciones del sistema:\n"
+            for i, solucion in enumerate(soluciones, 1):
+                resultado_texto += f"x{i} = {solucion:.2f}\n"
             
-            # Almacenar los resultados y pasos
-            self.resultado_final = "Soluciones del sistema:\n" + "\n".join([f"x{i+1} = {resultado:.2f}" for i, resultado in enumerate(resultados)])
-            self.resultado_pasos = pasos + "\n" + self.resultado_final
-            
-            # Mostrar solo la respuesta inicial
+            self.resultado_final = resultado_texto
+            self.resultado_pasos = f"Pasos de cálculo:\n\n{pasos}\n\n{self.resultado_final}"
             self.texto_resultado.setText(self.resultado_final)
-            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
             self.boton_paso_a_paso.show()
             self.modo_paso_a_paso = False
-        
+
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
     def cambiar_modo(self):
-        # Alternar entre los modos y actualizar el texto mostrado
         if self.modo_paso_a_paso:
             self.texto_resultado.setText(self.resultado_final)
             self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
@@ -2080,7 +2071,7 @@ class VentanaCramer(QWidget):
             self.texto_resultado.setText(self.resultado_pasos)
             self.boton_paso_a_paso.setText("Mostrar Solo Respuesta")
         self.modo_paso_a_paso = not self.modo_paso_a_paso
-        
+
     def regresar_menu_principal(self):
         self.main_window = MenuAplicacion()
         self.main_window.tamano_fuente = self.tamano_fuente

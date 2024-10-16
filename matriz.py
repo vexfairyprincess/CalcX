@@ -1,4 +1,5 @@
 #matriz.py
+from utils import evaluar_expresion
 
 class Matriz:
     """
@@ -17,14 +18,14 @@ class Matriz:
     def obtener_matriz(self, entradas):
         """
         Convierte las entradas en formato de lista de listas a una matriz de números flotantes.
-        :param entradas: lista de listas con los coeficientes de las ecuaciones
-        :return: matriz convertida a tipo flotante
-        :raises ValueError: Si alguna entrada no puede ser convertida a float
+        :param entradas: lista de listas con los coeficientes de las ecuaciones.
+        :return: matriz convertida a tipo flotante.
+        :raises ValueError: Si alguna entrada no puede ser convertida.
         """
         try:
-            matriz = [[float(valor) for valor in fila] for fila in entradas]  # Convierte cada entrada a float
+            matriz = [[evaluar_expresion(valor) for valor in fila] for fila in entradas]
         except ValueError:
-            raise ValueError("Introduce un número válido en la matriz.")
+            raise ValueError("Introduce una expresión matemática válida en la matriz.")
         return matriz
 
     def imprimir_matriz(self, paso, operacion):
@@ -236,40 +237,42 @@ class Matriz:
         """
         Calcula el determinante de la matriz utilizando el método de eliminación Gaussiana.
         :param paso_a_paso: si es True, guarda cada paso de la eliminación
-        :return: tupla con el determinante y los pasos como un string
+        :return: tupla con el determinante y los pasos como un string si paso_a_paso es True
         :raises ValueError: si la matriz no es cuadrada
         """
         if len(self.matriz) != len(self.matriz[0]):
             raise ValueError("El determinante solo se puede calcular para matrices cuadradas.")
 
         n = len(self.matriz)
-        # Copia la matriz para no modificar la original
         matriz_temp = [fila[:] for fila in self.matriz]
         determinante = 1
         pasos = "" if paso_a_paso else None
 
+        def formatear_matriz_temporal(matriz):
+            """Formatea la matriz temporal en un string para visualizar el estado actual."""
+            texto_matriz = ""
+            for fila in matriz:
+                texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
+            return texto_matriz
+
         for i in range(n):
-            # Encontrar el pivote más grande en la columna actual
             max_row = max(range(i, n), key=lambda x: abs(matriz_temp[x][i]))
             if abs(matriz_temp[max_row][i]) < 1e-10:
-                return 0, pasos if paso_a_paso else 0  # Si el pivote es 0, el determinante es 0
+                return 0, pasos if paso_a_paso else 0  # Determinante es 0 si el pivote es 0
 
-            # Intercambiar filas si el pivote no está en la fila actual
             if i != max_row:
                 matriz_temp[i], matriz_temp[max_row] = matriz_temp[max_row], matriz_temp[i]
-                determinante *= -1  # Cambia de signo el determinante por el intercambio
+                determinante *= -1  # Cambio de signo por intercambio de filas
                 if paso_a_paso:
                     pasos += f"Intercambio de filas {i + 1} y {max_row + 1} cambia el signo del determinante.\n"
-                    pasos += self.formatear_matriz() + "\n"
+                    pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
-            # Multiplicar el elemento diagonal al determinante
             pivote = matriz_temp[i][i]
             determinante *= pivote
             if paso_a_paso:
                 pasos += f"Multiplicando por el pivote {pivote:.2f} en la posición ({i + 1}, {i + 1}) acumula el determinante: {determinante:.2f}\n"
-                pasos += self.formatear_matriz() + "\n"
+                pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
-            # Hacer el pivote igual a 1 y reducir las filas debajo de la fila actual
             for j in range(i + 1, n):
                 factor = matriz_temp[j][i] / pivote
                 for k in range(i, n):
@@ -277,9 +280,8 @@ class Matriz:
 
                 if paso_a_paso:
                     pasos += f"Reduciendo Fila {j + 1}: F{j + 1} -> F{j + 1} - ({factor:.2f}) * F{i + 1}\n"
-                    pasos += self.formatear_matriz() + "\n"
+                    pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
-        # Después de reducir la matriz, el determinante final es el producto de los elementos de la diagonal.
         if paso_a_paso:
             pasos += f"\nDeterminante final (producto de los elementos de la diagonal): {determinante:.2f}\n"
 
@@ -334,46 +336,43 @@ class Matriz:
         inversa = [fila[n:] for fila in matriz_temp]
         return (Matriz(n, inversa), pasos) if paso_a_paso else Matriz(n, inversa)
     
-    def cramer(self, paso_a_paso=False):
+    def cramer(self, resultados, paso_a_paso=False):
         """
-        Aplica la Regla de Cramer para resolver el sistema de ecuaciones.
-        :param paso_a_paso: si es True, guarda cada paso de la resolución.
-        :return: una lista con los valores de las incógnitas o una tupla con la lista y los pasos
-        :raises ValueError: si la matriz no es cuadrada o si el determinante es cero
+        Resuelve el sistema de ecuaciones lineales usando la regla de Cramer.
+        :param resultados: lista de resultados de las ecuaciones.
+        :param paso_a_paso: si es True, muestra los pasos detallados del proceso.
+        :return: tupla con el vector solución y los pasos si paso_a_paso es True.
+        :raises ValueError: si el determinante de la matriz base es cero.
         """
+        # Verificar que la matriz sea cuadrada
         n = len(self.matriz)
-        if n != len(self.matriz[0]) - 1:
-            raise ValueError("La matriz debe ser cuadrada con una columna extra para los resultados.")
-
-        # Calcular el determinante de la matriz principal
-        matriz_principal = [fila[:-1] for fila in self.matriz]
-        matriz_base = Matriz(n, matriz_principal)
-        det_base, pasos_base = matriz_base.calcular_determinante(paso_a_paso=True)
+        if n != len(self.matriz[0]):
+            raise ValueError("La matriz debe ser cuadrada para aplicar la regla de Cramer.")
         
+        # Calcular el determinante de la matriz base
+        det_base, pasos_base = self.calcular_determinante(paso_a_paso=True)
         if abs(det_base) < 1e-10:
-            raise ValueError("La Regla de Cramer no se puede aplicar: el determinante es cero.")
-
-        resultado_texto = f"Determinante de la matriz principal:\n{matriz_base.formatear_matriz()}"
-        resultado_texto += f"\nDeterminante |A| = {det_base:.2f}\n\n"
+            raise ValueError("La matriz no es invertible, no se puede resolver por la regla de Cramer.")
         
-        resultados = []
+        soluciones = []
+        pasos = f"Determinante de la matriz base:\n{pasos_base}\n\n"
+        pasos += f"det(A) = {det_base:.2f}\n\n"
         
-        for i in range(n):
-            # Crear la matriz modificada reemplazando la i-ésima columna con la columna de resultados
-            matriz_modificada = [fila[:-1] for fila in self.matriz]
-            for j in range(n):
-                matriz_modificada[j][i] = self.matriz[j][-1]
+        for var_idx in range(n):
+            # Crear la matriz temporal reemplazando la columna var_idx con el vector de resultados
+            matriz_temp = [fila[:] for fila in self.matriz]
+            for i in range(n):
+                matriz_temp[i][var_idx] = resultados[i]
 
-            matriz_modificada_obj = Matriz(n, matriz_modificada)
-            det_modificado, pasos_modificado = matriz_modificada_obj.calcular_determinante(paso_a_paso=True)
-            valor_variable = det_modificado / det_base
-            resultados.append(valor_variable)
+            # Calcular el determinante de la matriz temporal
+            det_temp, pasos_temp = Matriz(n, matriz_temp).calcular_determinante(paso_a_paso=True)
+            valor_variable = det_temp / det_base
+            soluciones.append(valor_variable)
+            
+            # Añadir pasos al texto final si paso_a_paso es True
+            if paso_a_paso:
+                pasos += f"Determinante de la matriz para x{var_idx + 1}:\n{pasos_temp}\n"
+                pasos += f"det(A_{var_idx + 1}) = {det_temp:.2f}\n"
+                pasos += f"x{var_idx + 1} = det(A_{var_idx + 1}) / det(A) = {det_temp:.2f} / {det_base:.2f} = {valor_variable:.2f}\n\n"
 
-            # Añadir detalles a los pasos
-            resultado_texto += f"\nMatriz |A{i+1}| al reemplazar la columna {i + 1}:\n{matriz_modificada_obj.formatear_matriz()}"
-            resultado_texto += f"\nDeterminante |A{i+1}| = {det_modificado:.2f}\n"
-            resultado_texto += f"x{i + 1} = |A{i+1}| / |A| = {det_modificado:.2f} / {det_base:.2f} = {valor_variable:.2f}\n\n"
-
-        if paso_a_paso:
-            return resultados, resultado_texto
-        return resultados
+        return (soluciones, pasos) if paso_a_paso else soluciones
