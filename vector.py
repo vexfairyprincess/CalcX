@@ -1,5 +1,7 @@
 #vector.py
 
+from utils import evaluar_expresion
+
 class Vector:
     """Clase para representar y operar con vectores de tamaño variable."""
 
@@ -60,9 +62,11 @@ class Vector:
     
     @staticmethod
     def crear_vector_desde_entrada(componentes):
-        # Crea un vector asegurándose de que cada componente pueda ser convertido a float.
+        """
+        Crea un vector asegurándose de que cada componente pueda ser evaluado como expresión.
+        """
         try:
-            componentes_float = [float(x) for x in componentes]
+            componentes_float = [evaluar_expresion(x) for x in componentes]
             return Vector(componentes_float)
         except ValueError:
-            raise ValueError("Todos los componentes deben ser números.")
+            raise ValueError("Introduce expresiones válidas para los componentes.")
