@@ -1965,7 +1965,7 @@ class VentanaCramer(QWidget):
         # Vector de resultados (tabla de una sola columna)
         self.tabla_resultados = QTableWidget()
         self.tabla_resultados.setColumnCount(1)
-        self.tabla_resultados.setHorizontalHeaderLabels(["Resultado"])
+        self.tabla_resultados.setHorizontalHeaderLabels(["Terminos"])
         self.layout.addWidget(self.tabla_resultados)
 
         # Botón para calcular la regla de Cramer
@@ -2023,7 +2023,7 @@ class VentanaCramer(QWidget):
             
             # Configuración de tabla de resultados
             self.tabla_resultados.setRowCount(n)
-            self.tabla_resultados.setVerticalHeaderLabels([f"Resultado {i + 1}" for i in range(n)])
+            self.tabla_resultados.setVerticalHeaderLabels([f"Término independiente {i + 1}" for i in range(n)])
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))

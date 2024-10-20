@@ -352,7 +352,7 @@ class Matriz:
         # Calcular el determinante de la matriz base
         det_base, pasos_base = self.calcular_determinante(paso_a_paso=True)
         if abs(det_base) < 1e-10:
-            raise ValueError("La matriz no es invertible, no se puede resolver por la regla de Cramer.")
+            raise ValueError("La matriz no puede ser resuelta por Cramer.")
         
         soluciones = []
         pasos = f"Determinante de la matriz base:\n{pasos_base}\n\n"
