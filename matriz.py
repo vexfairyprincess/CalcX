@@ -302,6 +302,18 @@ class Matriz:
         matriz_temp = [fila[:] + [1 if i == j else 0 for j in range(n)] for i, fila in enumerate(self.matriz)]
         pasos = "" if paso_a_paso else None
 
+        def formatear_matriz_temporal(matriz):
+            """Formatea la matriz temporal en un string para visualizar el estado actual."""
+            texto_matriz = ""
+            for fila in matriz:
+                texto_matriz += "  ".join(f"{val:.2f}" for val in fila) + "\n"
+            return texto_matriz
+
+        # Mostrar la matriz aumentada al principio
+        if paso_a_paso:
+            pasos += "Matriz aumentada (Matriz | Identidad):\n"
+            pasos += formatear_matriz_temporal(matriz_temp) + "\n"
+
         # Realizar eliminación Gauss-Jordan
         for i in range(n):
             # Encontrar el pivote más grande en la columna actual
@@ -314,14 +326,14 @@ class Matriz:
                 matriz_temp[i], matriz_temp[max_row] = matriz_temp[max_row], matriz_temp[i]
                 if paso_a_paso:
                     pasos += f"Intercambio de filas {i + 1} y {max_row + 1}:\n"
-                    pasos += self.formatear_matriz() + "\n"
+                    pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
             # Normalizar la fila del pivote
             pivote = matriz_temp[i][i]
             matriz_temp[i] = [elemento / pivote for elemento in matriz_temp[i]]
             if paso_a_paso:
                 pasos += f"Dividiendo la fila {i + 1} por el pivote {pivote:.2f}:\n"
-                pasos += self.formatear_matriz() + "\n"
+                pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
             # Hacer ceros en las otras posiciones de la columna
             for j in range(n):
@@ -330,11 +342,17 @@ class Matriz:
                     matriz_temp[j] = [matriz_temp[j][k] - factor * matriz_temp[i][k] for k in range(2 * n)]
                     if paso_a_paso:
                         pasos += f"Reduciendo Fila {j + 1}: F{j + 1} -> F{j + 1} - ({factor:.2f}) * F{i + 1}\n"
-                        pasos += self.formatear_matriz() + "\n"
+                        pasos += formatear_matriz_temporal(matriz_temp) + "\n"
 
         # Extraer la matriz inversa del lado derecho
         inversa = [fila[n:] for fila in matriz_temp]
-        return (Matriz(n, inversa), pasos) if paso_a_paso else Matriz(n, inversa)
+        
+        if paso_a_paso:
+            pasos += "Matriz inversa:\n"
+            pasos += formatear_matriz_temporal(inversa) + "\n"
+            return Matriz(n, inversa), pasos
+        else:
+            return Matriz(n, inversa)
     
     def cramer(self, resultados, paso_a_paso=False):
         """
