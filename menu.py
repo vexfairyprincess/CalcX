@@ -104,6 +104,11 @@ class MenuAplicacion(QMainWindow):
         self.boton_cramer.clicked.connect(self.abrir_cramer)
         self.layout.addWidget(self.boton_cramer)
 
+                
+        self.boton_cramer = QPushButton("Resolver con factorización LU (beta)", self)
+        self.boton_cramer.clicked.connect(self.abrir_lu)
+        self.layout.addWidget(self.boton_cramer)
+
         # Espaciador
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
@@ -197,6 +202,12 @@ class MenuAplicacion(QMainWindow):
         self.ventana_cramer = VentanaCramer(self.tamano_fuente)
         self.ventana_cramer.show()
         self.cambiar_fuente_signal.connect(self.ventana_cramer.actualizar_fuente_local)
+        self.close()
+
+    def abrir_lu(self):
+        self.ventana_lu = VentanaLU(self.tamano_fuente)
+        self.ventana_lu.show()
+        self.cambiar_fuente_signal.connect(self.ventana_lu.actualizar_fuente_local)
         self.close()
 
     def limpiar_layout(self, layout):
@@ -2078,6 +2089,160 @@ class VentanaCramer(QWidget):
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
         self.close()
+
+class VentanaLU(QWidget):
+    def __init__(self, tamano_fuente):
+        super().__init__()
+        self.setWindowTitle("Factorización LU")
+        self.setGeometry(100, 100, 1000, 800)
+        self.tamano_fuente = tamano_fuente
+        self.actualizar_fuente_local(self.tamano_fuente)
+
+        # Layout principal
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        # Entrada para el tamaño de la matriz
+        self.layout_entrada = QHBoxLayout()
+        self.label_dimension = QLabel("Tamaño de la Matriz (n x n):")
+        self.input_dimension = QLineEdit()
+        self.input_dimension.setFixedWidth(60)
+        self.boton_crear_matriz = QPushButton("Crear Matriz y Vector")
+        self.boton_crear_matriz.clicked.connect(self.crear_matriz_vector)
+
+        self.layout_entrada.addWidget(self.label_dimension)
+        self.layout_entrada.addWidget(self.input_dimension)
+        self.layout_entrada.addWidget(self.boton_crear_matriz)
+        self.layout.addLayout(self.layout_entrada)
+
+        # Tabla para la matriz A (creada dinámicamente)
+        self.label_matriz = QLabel("Matriz A:")
+        self.layout.addWidget(self.label_matriz)
+        self.tabla_matriz = QTableWidget(self)
+        self.layout.addWidget(self.tabla_matriz)
+
+        # Tabla para el vector b (creada dinámicamente)
+        self.label_vector_b = QLabel("Vector b:")
+        self.layout.addWidget(self.label_vector_b)
+        self.tabla_vector_b = QTableWidget(self)
+        self.layout.addWidget(self.tabla_vector_b)
+
+        # Botón para calcular la factorización LU y resolver Ax = b
+        self.boton_calcular = QPushButton("Calcular LU y Resolver Ax = b", self)
+        self.boton_calcular.setFixedWidth(250)
+        self.boton_calcular.clicked.connect(self.calcular_lu)
+        self.layout.addWidget(self.boton_calcular, alignment=Qt.AlignCenter)
+
+        # Botón para mostrar paso a paso
+        self.boton_paso_a_paso = QPushButton("Mostrar Solución Paso a Paso", self)
+        self.boton_paso_a_paso.setFixedWidth(250)
+        self.boton_paso_a_paso.clicked.connect(self.cambiar_modo)
+        self.boton_paso_a_paso.hide()  # Se oculta inicialmente hasta que se realice el cálculo
+        self.layout.addWidget(self.boton_paso_a_paso, alignment=Qt.AlignCenter)
+
+        # Área de resultados
+        self.resultado = QTextEdit(self)
+        self.resultado.setReadOnly(True)
+        self.layout.addWidget(self.resultado)
+
+        # Botón para regresar al menú principal
+        self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+
+        # Variables para almacenar los resultados y los pasos
+        self.resultado_final = ""
+        self.resultado_pasos = ""
+        self.modo_paso_a_paso = False
+
+    def crear_matriz_vector(self):
+        try:
+            n = int(self.input_dimension.text())
+            if n <= 0:
+                raise ValueError("El tamaño de la matriz debe ser un número positivo.")
+
+            # Crear tabla para la matriz A
+            self.tabla_matriz.setRowCount(n)
+            self.tabla_matriz.setColumnCount(n)
+            self.tabla_matriz.setHorizontalHeaderLabels([f"Columna {i+1}" for i in range(n)])
+            self.tabla_matriz.setVerticalHeaderLabels([f"Fila {i+1}" for i in range(n)])
+
+            # Crear tabla para el vector b
+            self.tabla_vector_b.setRowCount(n)
+            self.tabla_vector_b.setColumnCount(1)
+            self.tabla_vector_b.setHorizontalHeaderLabels(["b"])
+            self.tabla_vector_b.setVerticalHeaderLabels([f"Componente {i+1}" for i in range(n)])
+
+        except ValueError:
+            QMessageBox.critical(self, "Error", "Introduce un tamaño válido para la matriz.")
+
+    def calcular_lu(self):
+        try:
+            # Leer la matriz A y el vector b desde las tablas
+            n = self.tabla_matriz.rowCount()
+            A = []
+            for i in range(n):
+                fila = []
+                for j in range(n):
+                    item = self.tabla_matriz.item(i, j)
+                    if item is None or not item.text():
+                        raise ValueError(f"Introduce un valor en la posición ({i+1}, {j+1}) de la matriz.")
+                    fila.append(evaluar_expresion(item.text()))
+                A.append(fila)
+
+            b = []
+            for i in range(n):
+                item = self.tabla_vector_b.item(i, 0)
+                if item is None or not item.text():
+                    raise ValueError(f"Introduce un valor en la posición {i+1} del vector b.")
+                b.append(evaluar_expresion(item.text()))
+
+            # Crear la matriz A y resolver usando LU
+            matriz_a = Matriz(n, A)
+            x, pasos = matriz_a.resolver_lu(b, paso_a_paso=True)
+
+            # Mostrar los pasos y la solución
+            self.resultado_pasos = pasos
+            self.resultado_final = "\nSolución del sistema (x):\n" + "\n".join(f"x[{i+1}] = {val:.2f}" for i, val in enumerate(x))
+            self.resultado.setText(self.resultado_final)
+
+            # Mostrar el botón para ver el paso a paso
+            self.boton_paso_a_paso.show()
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def cambiar_modo(self):
+        """Cambia entre mostrar solo el resultado final o los pasos completos."""
+        if self.modo_paso_a_paso:
+            self.resultado.setText(self.resultado_final)
+            self.boton_paso_a_paso.setText("Mostrar Solución Paso a Paso")
+        else:
+            self.resultado.setText(self.resultado_pasos)
+            self.boton_paso_a_paso.setText("Mostrar Solo Respuesta")
+        self.modo_paso_a_paso = not self.modo_paso_a_paso
+
+    def regresar_menu_principal(self):
+        self.main_window = MenuAplicacion()
+        self.main_window.tamano_fuente = self.tamano_fuente
+        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
+        self.main_window.show()
+        self.close()
+
+    def actualizar_fuente_local(self, tamano):
+        """Actualizar estilo y fuente en toda la ventana"""
+        self.setStyleSheet(f"""
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 8px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+        """)
 
 def iniciar_menu():
     app = QApplication(sys.argv)
