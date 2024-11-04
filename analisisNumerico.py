@@ -11,7 +11,7 @@ class VentanaMetodoBiseccion(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Método de Bisección - Análisis Numérico")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 800, 700)
         self.initUI()
 
     def initUI(self):
@@ -63,6 +63,11 @@ class VentanaMetodoBiseccion(QMainWindow):
         self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
         self.layout.addWidget(self.back_to_analysis_menu_button)
+
+        #Area de resultados
+        self.result_area = QTextEdit()
+        self.result_area.setReadOnly(True)
+        self.layout.addWidget(self.result_area)
 
     def regresar_menu_analisis_numerico(self):
         from menu import MenuAnalisisNumerico
