@@ -4,21 +4,78 @@ from utils import evaluar_expresion
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
-    QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView, QTableWidgetItem
+    QTextEdit, QMessageBox, QSpacerItem, QSizePolicy, QFrame, QScrollArea, QTableWidget, QHeaderView, 
+    QTableWidgetItem, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtGui import QFont, QPixmap
 from matriz import Matriz
 from vector import Vector
 from matrizxvector import MxV
+from analisisNumerico import VentanaMetodoBiseccion
 import sys
 
-class MenuAplicacion(QMainWindow):
+
+class MenuPrincipal(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Menú Principal")
+        self.setGeometry(100, 100, 800, 600)
+
+        # Widget principal y layout
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.layout = QVBoxLayout()
+        self.main_widget.setLayout(self.layout)
+
+        # Espaciador para empujar la imagen y botones hacia arriba
+        self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # Imagen SVG
+        self.imagen_svg = QSvgWidget("calcXlogo.svg")  # Reemplaza con la ruta de tu archivo SVG
+        self.imagen_svg.setFixedSize(450, 250)  # Ajusta el tamaño según lo necesario
+        self.layout.addWidget(self.imagen_svg, alignment=Qt.AlignTop | Qt.AlignHCenter)
+
+        # Espaciador pequeño entre el logo y los botones
+        self.layout.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
+        # Botón para Álgebra Lineal
+        self.boton_algebra_lineal = QPushButton("Álgebra Lineal", self)
+        self.boton_algebra_lineal.clicked.connect(self.abrir_menu_algebra_lineal)
+        self.layout.addWidget(self.boton_algebra_lineal)
+
+        # Botón para Análisis Numérico
+        self.boton_analisis_numerico = QPushButton("Análisis Numérico", self)
+        self.boton_analisis_numerico.clicked.connect(self.abrir_menu_analisis_numerico)
+        self.layout.addWidget(self.boton_analisis_numerico)
+
+        # Espaciador expansivo para empujar los botones hacia arriba y el botón de salida hacia abajo
+        self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # Botón para salir de la aplicación
+        self.boton_salir = QPushButton("Salir", self)
+        self.boton_salir.clicked.connect(self.close)
+        self.layout.addWidget(self.boton_salir)
+
+    def abrir_menu_algebra_lineal(self):
+        # Abre el menú de Álgebra Lineal
+        self.menu_algebra_lineal = MenuAlgebra()
+        self.menu_algebra_lineal.show()
+        self.close()
+
+    def abrir_menu_analisis_numerico(self):
+        # Abre el menú de Análisis Numérico
+        self.menu_analisis_numerico = MenuAnalisisNumerico()
+        self.menu_analisis_numerico.show()
+        self.close()
+
+class MenuAlgebra(QMainWindow):
     cambiar_fuente_signal = pyqtSignal(int)  # Señal para cambiar el tamaño de fuente global
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Menú Principal")
+        self.setWindowTitle("Menú Algebra")
         self.setGeometry(100, 100, 800, 600)
         
         # Fuente base
@@ -55,7 +112,7 @@ class MenuAplicacion(QMainWindow):
         """)
 
         # Título
-        self.label_titulo = QLabel("Menú Principal", self)
+        self.label_titulo = QLabel("Menú Álgebra Lineal", self)
         self.label_titulo.setAlignment(Qt.AlignCenter)
         fuente_titulo = QFont()
         fuente_titulo.setPointSize(28)
@@ -124,9 +181,9 @@ class MenuAplicacion(QMainWindow):
         self.boton_disminuir_fuente.clicked.connect(self.disminuir_tamano_fuente)
         botones_fuente_layout.addWidget(self.boton_disminuir_fuente)
         
-        # Botón para salir
-        self.boton_salir = QPushButton("Salir", self)
-        self.boton_salir.clicked.connect(self.close)
+        # Botón para regresar al menú principal
+        self.boton_salir = QPushButton("Regresar al menú principal", self)
+        self.boton_salir.clicked.connect(self.regresar_menu_principal)
         self.layout.addWidget(self.boton_salir)
         
     def aumentar_tamano_fuente(self):
@@ -143,7 +200,13 @@ class MenuAplicacion(QMainWindow):
         fuente.setPointSize(tamano)
         app = QApplication.instance()
         app.setFont(fuente)
-        
+
+    def regresar_menu_principal(self):
+        # Abre el menú principal inicial y cierra el actual
+        self.menu_principal = MenuPrincipal()
+        self.menu_principal.show()
+        self.close()
+
     def abrir_metodo_escalonado(self):
         self.ventana_escalonado = VentanaEscalonado(self.tamano_fuente)
         self.ventana_escalonado.show()
@@ -423,7 +486,7 @@ class VentanaEscalonado(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -687,7 +750,7 @@ class VentanaOperacionesCombinadas(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -860,7 +923,7 @@ class VentanaProductoVectorial(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1086,7 +1149,7 @@ class VentanaProductoMatrizVector(QWidget):
             return "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz])
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1299,7 +1362,7 @@ class VentanaSumaMatrices(QWidget):
         return texto_matriz
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1424,7 +1487,7 @@ class VentanaTranspuesta(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1670,7 +1733,7 @@ class VentanaMultiplicacionMatrices(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1805,7 +1868,7 @@ class VentanaDeterminante(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -1939,7 +2002,7 @@ class VentanaInversa(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -2084,7 +2147,7 @@ class VentanaCramer(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -2223,7 +2286,7 @@ class VentanaLU(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAplicacion()
+        self.main_window = MenuAlgebra()
         self.main_window.tamano_fuente = self.tamano_fuente
         self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
         self.main_window.show()
@@ -2244,6 +2307,49 @@ class VentanaLU(QWidget):
             }}
         """)
 
+class MenuAnalisisNumerico(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Menú de Análisis Numérico")
+        self.setGeometry(100, 100, 800, 600)
+
+        # Widget principal
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.layout = QVBoxLayout()
+        self.main_widget.setLayout(self.layout)
+
+        # Título
+        self.label_titulo = QLabel("Ánalisis Numérico", self)
+        self.label_titulo.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        fuente_titulo = QFont()
+        fuente_titulo.setPointSize(28)
+        fuente_titulo.setBold(True)
+        self.label_titulo.setFont(fuente_titulo)
+        self.layout.addWidget(self.label_titulo)
+
+        # Botón para el método de Bisección
+        self.boton_biseccion = QPushButton("Método de Bisección", self)
+        self.boton_biseccion.clicked.connect(self.abrir_metodo_biseccion)
+        self.layout.addWidget(self.boton_biseccion)
+
+        # Botón para regresar al menú principal
+        self.boton_salir = QPushButton("Regresar al menú principal", self)
+        self.boton_salir.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_salir)
+
+    def regresar_menu_principal(self):
+        # Abre el menú principal inicial y cierra el actual
+        self.menu_principal = MenuPrincipal()
+        self.menu_principal.show()
+        self.close()
+
+    def abrir_metodo_biseccion(self):
+        # Abre la ventana del método de bisección
+        self.ventana_biseccion = VentanaMetodoBiseccion()
+        self.ventana_biseccion.show()
+        self.close()
+
 def iniciar_menu():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  
@@ -2251,6 +2357,6 @@ def iniciar_menu():
     fuente_base.setPointSize(17)
     app.setFont(fuente_base)
     
-    ventana = MenuAplicacion()
+    ventana = MenuPrincipal()
     ventana.show()
     sys.exit(app.exec())
