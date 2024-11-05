@@ -87,12 +87,11 @@ class VentanaMetodoBiseccion(QMainWindow):
         # Layout principal para el teclado matemático
         keyboard_layout = QVBoxLayout()
 
-        # Primer fila de botones
+        # Primera fila de botones
         row1_layout = QHBoxLayout()
         row1_buttons = [
             ('+', '+'), ('-', '-'), ('×', '*'), ('÷', '/'),
-            ('^', '**'), ('√', 'sqrt('), ('ln', 'ln('), ('log₁₀', 'log(x, 10)'),
-            ('logₐ', 'log(x, '), ('sin', 'sin('), ('cos', 'cos('), ('tan', 'tan(')
+            ('^', '**'), ('√', 'sqrt('), ('ln', 'ln(')
         ]
         for label, value in row1_buttons:
             button = QPushButton(label)
@@ -103,14 +102,28 @@ class VentanaMetodoBiseccion(QMainWindow):
         # Segunda fila de botones
         row2_layout = QHBoxLayout()
         row2_buttons = [
-            ('sinh', 'sinh('), ('cosh', 'cosh('), ('tanh', 'tanh('),
-            ('(', '('), (')', ')'), ('π', 'pi'), ('e', 'E')
+            ('log₁₀', 'log(x, 10)'), ('logₐ', 'log(x, '), 
+            ('sin', 'sin('), ('cos', 'cos('), ('tan', 'tan('),
+            ('sinh', 'sinh('), ('cosh', 'cosh('), ('tanh', 'tanh(')
         ]
         for label, value in row2_buttons:
             button = QPushButton(label)
             button.clicked.connect(lambda _, v=value, lbl=label: self.insert_text(v, lbl))
             row2_layout.addWidget(button)
         keyboard_layout.addLayout(row2_layout)
+
+        # Tercera fila de botones
+        row3_layout = QHBoxLayout()
+        row3_buttons = [
+            ('arcsin', 'arcsin('), ('arccos', 'arccos('), ('arctan', 'arctan('),
+            ('cot', 'cot('), ('sec', 'sec('), ('csc', 'csc('),
+            ('(', '('), (')', ')'), ('π', 'pi'), ('e', 'E')
+        ]
+        for label, value in row3_buttons:
+            button = QPushButton(label)
+            button.clicked.connect(lambda _, v=value, lbl=label: self.insert_text(v, lbl))
+            row3_layout.addWidget(button)
+        keyboard_layout.addLayout(row3_layout)
 
         return keyboard_layout
 
