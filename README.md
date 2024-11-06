@@ -1,18 +1,28 @@
-# Calculadora de Matrices
+# <img src="calcXlogo.svg" alt="Logo de Calculadora de Matrices" width="300">
 
-Este proyecto es una calculadora de matrices diseñada para realizar diversas operaciones de Álgebra Lineal. La herramienta permite realizar operaciones avanzadas como la multiplicación de matrices, cálculo de determinantes, y obtención de la inversa, entre otros. Este proyecto fue desarrollado para la clase de Álgebra Lineal, impartida por el profesor Iván Argüello.
+## Descripción del Proyecto
+Este proyecto es una calculadora de matrices y operaciones numéricas avanzadas diseñada para resolver problemas complejos de Álgebra Lineal y Análisis Numérico. Desarrollada para la clase de Álgebra Lineal impartida por el profesor Iván Argüello, esta herramienta ofrece una interfaz gráfica amigable y funcionalidades detalladas que permiten a los usuarios realizar una variedad de operaciones matemáticas de manera interactiva.
 
-## Características
+## Métodos Disponibles
 
-- **Multiplicación de Matrices**: Permite multiplicar matrices de dimensiones compatibles.
-- **Cálculo de Determinantes**: Calcula el determinante de matrices cuadradas.
-- **Cálculo de la Inversa**: Realiza la eliminación Gauss-Jordan para calcular la inversa de matrices cuadradas.
-- **Interfaz Paso a Paso**: Visualiza el resultado final o el proceso detallado de cada operación, con la opción de alternar entre ambos modos.
-- **Interfaz Gráfica**: Desarrollada con PyQt, la interfaz permite introducir matrices y seleccionar operaciones de manera sencilla.
+### Álgebra Lineal
+- **Multiplicación de Matrices**: Realiza la multiplicación de matrices de dimensiones compatibles.
+- **Suma de Matrices**: Permite sumar matrices de las mismas dimensiones.
+- **Determinante de Matrices**: Calcula el determinante de matrices cuadradas.
+- **Inversa de Matrices**: Utiliza el método de eliminación Gauss-Jordan para encontrar la inversa de matrices cuadradas.
+- **Transpuesta de Matriz**: Obtiene la transpuesta de cualquier matriz.
+- **Producto Matriz por Vector**: Realiza el producto de una matriz por un vector.
+- **Método de Cramer**: Resuelve sistemas de ecuaciones lineales utilizando la regla de Cramer.
+- **Factorización LU**: Descompone matrices cuadradas en productos de matrices triangulares.
+- **Reducción por el Método Escalonado**: Lleva una matriz a su forma escalonada.
+
+### Análisis Numérico
+- **Método de Bisección**: Encuentra raíces de funciones continuas en un intervalo dado.
+- **Otros Métodos de Solución Numérica**: Incluye operaciones y algoritmos comunes en el análisis numérico.
 
 ## Instalación
 
-Para utilizar esta calculadora de matrices, sigue los siguientes pasos:
+Para usar la calculadora, sigue estos pasos:
 
 1. **Clona el repositorio**:
    ```bash
@@ -20,39 +30,49 @@ Para utilizar esta calculadora de matrices, sigue los siguientes pasos:
    cd matrix-calculator
    ```
 
-2. **Ejecuta el programa**:
+2. **Instala las dependencias** (si es necesario):
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Ejecuta el programa**:
    ```bash
    python main.py
    ```
 
 ## Uso
 
-1. Abre el programa y selecciona la operación deseada.
-2. Ingresa las dimensiones de las matrices y luego introduce los valores en las celdas.
-3. Haz clic en el botón correspondiente para ejecutar la operación.
-4. Si está disponible, utiliza el botón "Mostrar Solución Paso a Paso" para alternar entre el resultado final y el proceso detallado.
+1. Abre la aplicación y selecciona la operación que deseas realizar.
+2. Ingresa las dimensiones y los valores de las matrices en las celdas correspondientes.
+3. Haz clic en el botón de la operación para ejecutar el cálculo.
+4. Usa la opción "Mostrar Solución Paso a Paso" para visualizar los detalles del proceso de cálculo.
 
 ## Tecnologías Utilizadas
 
-- **Python**: Lenguaje de programación utilizado.
-- **PyQt**: Librería utilizada para la interfaz gráfica.
-- **Álgebra Lineal**: Principios matemáticos aplicados para las operaciones de matrices.
+- **Python**: Lenguaje principal de programación.
+- **PyQt**: Biblioteca para la construcción de la interfaz gráfica de usuario.
+- **SymPy**: Utilizada para la manipulación simbólica y la evaluación de funciones matemáticas.
+- **MathJax**: Integrada para la representación de fórmulas matemáticas en formato LaTeX.
 
 ## Contribuciones
 
-Si deseas contribuir a este proyecto, puedes seguir estos pasos:
+Si deseas contribuir al proyecto, sigue estos pasos:
 
 1. Realiza un fork del repositorio.
-2. Crea una rama nueva (`git checkout -b nueva-funcionalidad`).
-3. Realiza tus cambios y realiza un commit (`git commit -am 'Añadir nueva funcionalidad'`).
-4. Envía los cambios a tu repositorio (`git push origin nueva-funcionalidad`).
-5. Abre un Pull Request para revisión.
+2. Crea una rama nueva para tus cambios (`git checkout -b nueva-funcionalidad`).
+3. Realiza tus cambios y haz commit (`git commit -am 'Añadir nueva funcionalidad'`).
+4. Sube tus cambios a tu repositorio (`git push origin nueva-funcionalidad`).
+5. Abre un Pull Request para que se revisen tus cambios.
 
-## Equipo
+## Equipo de Desarrollo
 
-Nuestro equipo está conformado por:
+Este proyecto fue desarrollado por:
 
-1. Silvio Alejandro Mora Mendoza
-2. Andrés Miguel Martínez Somarriba
-3. Halley Isela Castro Calero
-4. Samuel Benjamín Chavarria Baltodano
+- **Silvio Alejandro Mora Mendoza**
+- **Andrés Miguel Martínez Somarriba**
+- **Halley Isela Castro Calero**
+- **Samuel Benjamín Chavarria Baltodano**
+
+---
+
+© 2024 CalcX. Todos los derechos reservados.
