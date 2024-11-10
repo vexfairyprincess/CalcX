@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt
 import webbrowser
-from sympy import symbols, sympify, latex, re
+from sympy import *
+import re
 
 class VentanaMetodoBase(QMainWindow):
     def __init__(self):
@@ -74,7 +75,7 @@ class VentanaMetodoBase(QMainWindow):
         self.input_function.setFocus()
 
     def load_mathjax(self):
-        mathjax_html = """
+        mathjax_html = r"""
         <html>
         <head>
             <script type="text/javascript" async
@@ -187,6 +188,43 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         self.layout.addWidget(self.back_to_analysis_menu_button)
 
         self.result_area = QTextEdit
+        
+    def run_bisection(self):
+        try:
+            func_text = self.prepare_expression(self.input_function.text())
+            x = symbols('x')
+            func = lambdify(x, sympify(func_text), 'math')
+            a = float(self.input_a.text())
+            b = float(self.input_b.text())
+            tol = float(self.input_tolerance.text())
+            
+            result = self.bisection(func, a, b, tol)
+            self.result_area.setText(result)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error en la entrada: {e}")
+
+    def bisection(self, func, a, b, tol):
+        steps = ""
+        if func(a) * func(b) >= 0:
+            return "El intervalo no es válido para el método de bisección."
+        
+        iter_count = 0
+        while (b - a) / 2.0 > tol:
+            iter_count += 1
+            c = (a + b) / 2.0
+            steps += f"Iteración {iter_count}: a = {a}, b = {b}, c = {c}, f(c) = {func(c)}\n"
+            
+            if abs(func(c)) < tol:
+                steps += f"Raíz aproximada encontrada en x = {c}\n"
+                return steps
+            
+            if func(a) * func(c) < 0:
+                b = c
+            else:
+                a = c
+
+        steps += f"Raíz aproximada encontrada en x = {(a + b) / 2.0}\n"
+        return steps
 
 class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
     def __init__(self):
