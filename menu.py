@@ -572,6 +572,7 @@ class MenuAnalisisNumerico(QMainWindow):
             }}
         """)
 
+
 def iniciar_menu():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  
