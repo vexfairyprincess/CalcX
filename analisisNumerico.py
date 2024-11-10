@@ -266,3 +266,116 @@ class VentanaMetodoBiseccion(QMainWindow):
             webbrowser.open(f"https://www.desmos.com/calculator")
         else:
             QMessageBox.critical(self, "Error", "Primero ingrese una función válida para copiar su LaTeX.")
+            
+class VentanaMetodoNewtonRaphson(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Método de Newton-Raphson - Análisis Numérico")
+        self.setGeometry(100, 100, 800, 700)
+
+        # Widget central
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
+        # Layout principal
+        self.layout = QVBoxLayout(self.central_widget)
+
+        # Etiqueta de título
+        self.label_titulo = QLabel("Método de Newton-Raphson", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.label_titulo)
+
+        # Campo de entrada para la función
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función en términos de x (e.g., x**2 - 4)")
+        self.layout.addWidget(QLabel("Función f(x):"))
+        self.layout.addWidget(self.input_function)
+
+        # Campo de entrada para el valor inicial x0
+        self.input_initial_value = QLineEdit()
+        self.input_initial_value.setPlaceholderText("Ingrese el valor inicial x0")
+        self.layout.addWidget(QLabel("Valor inicial (x0):"))
+        self.layout.addWidget(self.input_initial_value)
+
+        # Área de texto para mostrar resultados
+        self.result_text = QTextEdit()
+        self.result_text.setReadOnly(True)
+        self.layout.addWidget(self.result_text)
+
+        # Botón de cálculo específico para Newton-Raphson
+        self.calc_button_newton = QPushButton("Calcular Raíz - Newton-Raphson", self)
+        self.layout.addWidget(self.calc_button_newton)
+
+        # Conectar el botón de cálculo al método de Newton-Raphson
+        self.calc_button_newton.clicked.connect(self.calcular_raiz_newton_raphson)
+
+    def calcular_raiz_newton_raphson(self):
+        try:
+            # Obtener la función ingresada y reemplazar ^ por **
+            if not self.input_function.text().strip():
+                raise ValueError("Por favor, ingrese una función válida.")
+
+            funcion_str = self.input_function.text().replace('^', '**')
+            valor_inicial_str = self.input_initial_value.text()
+            if not funcion_str or not valor_inicial_str.strip():
+                raise ValueError("Por favor, ingrese tanto la función como el valor inicial.")
+
+            # Parseo de la función y derivada
+            x = symbols('x')
+            try:
+                funcion = sympify(funcion_str)
+            except (ValueError, SyntaxError):
+                raise ValueError("La función ingresada no es válida. Por favor, verifique la sintaxis.")
+            derivada = funcion.diff(x)
+
+            # Convertir el valor inicial a float
+            x0 = float(valor_inicial_str)
+
+            # Iteración para encontrar la raíz
+            tol = 1e-6
+            max_iter = 100
+            iteracion = 0
+            error = float('inf')
+            resultado = []
+
+            while error > tol and iteracion < max_iter:
+                f_x0 = funcion.evalf(subs={x: x0})
+                f_prime_x0 = derivada.evalf(subs={x: x0})
+
+                if f_prime_x0 == 0:
+                    raise ZeroDivisionError("La derivada se volvió cero. No se puede continuar.")
+
+                x1 = x0 - float(f_x0) / float(f_prime_x0)
+                error = abs(float(x1) - float(x0))
+                resultado.append(f"Iteración {iteracion + 1}: x = {float(x1):.6f}, error = {error:.6e}")
+                x0 = x1
+                iteracion += 1
+
+            if iteracion == max_iter:
+                resultado.append("El método no convergió después del número máximo de iteraciones.")
+            else:
+                resultado.append(f"El método convergió en {iteracion} iteraciones. La raíz es aproximadamente x = {float(x1):.6f}")
+
+            # Mostrar resultados
+            self.result_text.setText("\n".join(resultado))
+
+            # Mostrar la función y su derivada en formato LaTeX
+            funcion_latex = latex(funcion)
+            derivada_latex = latex(derivada)
+            html_content = r"""
+            <html>
+            <head>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+            </head>
+            <body>
+            <p>f(x): \({funcion_latex}\)</p>
+            <p>f'(x): \({derivada_latex}\)</p>
+            </body>
+            </html>
+            """
+            self.update_rendered_function()
+        
+        except ZeroDivisionError as e:
+            self.result_text.setText(str(e))
+        except Exception as e:
+            self.result_text.setText(f"Error: {str(e)}")
