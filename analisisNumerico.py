@@ -187,7 +187,8 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
         self.layout.addWidget(self.back_to_analysis_menu_button)
 
-        self.result_area = QTextEdit
+        self.result_area = QTextEdit()
+        self.layout.addWidget(self.result_area)
         
     def run_bisection(self):
         try:
@@ -285,7 +286,7 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
 
                 x1 = x0 - f_x0 / f_prime_x0
                 error = abs(x1 - x0)
-                results.append(f"Iteración {iter_count + 1}: x = {x1:.6f}, error = {error:.6e}")
+                results.append(f"Iteración {iter_count + 1}: x = {x1}, error = {error}")
                 x0 = x1
                 iter_count += 1
 
