@@ -1,90 +1,25 @@
-import sys
-import webbrowser
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QLineEdit, QLabel, QPushButton, 
-QHBoxLayout, QTextEdit, QMessageBox, QDialog, QDialogButtonBox)
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from sympy import symbols, sympify, latex, lambdify, log, sqrt, sin, cos, tan, sinh, cosh, tanh, pi, E
+from PyQt5.QtCore import Qt
+import webbrowser
+from sympy import *
 import re
 
-class VentanaMetodoBiseccion(QMainWindow):
+class VentanaMetodoBase(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Método de Bisección - Análisis Numérico")
         self.setGeometry(100, 100, 800, 700)
-        self.initUI()
-
-    def initUI(self):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        
-        # Layout principal
         self.layout = QVBoxLayout(self.central_widget)
-        
-        # Campo de entrada para la función
-        self.input_function = QLineEdit()
-        self.input_function.setPlaceholderText("Ingrese la función en términos de x (por ejemplo: x^2 - 4x + cosh(x) -ln(x))")
-        self.input_function.textChanged.connect(self.update_rendered_function)
-        self.layout.addWidget(self.input_function)
-        
-        # Área para renderizar la función ingresada
-        self.rendered_view = QWebEngineView(self)
-        self.rendered_view.setFixedHeight(200)
-        self.layout.addWidget(self.rendered_view)
-        
-        # Contenedor para el teclado matemático
-        self.math_keyboard = self.create_math_keyboard()
-        self.layout.addLayout(self.math_keyboard)
-        
-        # Entradas para los parámetros del método de bisección
-        self.input_a = QLineEdit()
-        self.input_a.setPlaceholderText("Ingrese el valor de a (inicio del intervalo)")
-        self.input_b = QLineEdit()
-        self.input_b.setPlaceholderText("Ingrese el valor de b (fin del intervalo)")
-        self.input_tolerance = QLineEdit()
-        self.input_tolerance.setPlaceholderText("Ingrese la tolerancia")
-        
-        # Añadir las entradas al layout
-        self.layout.addWidget(self.input_a)
-        self.layout.addWidget(self.input_b)
-        self.layout.addWidget(self.input_tolerance)
-        
-        # Botón para iniciar el cálculo de bisección
-        self.start_button = QPushButton("Calcular Raíz")
-        self.start_button.clicked.connect(self.run_bisection)
-        self.layout.addWidget(self.start_button)
-        
-        # Botón para copiar LaTeX y abrir Desmos
-        self.desmos_button = QPushButton("Copiar LaTeX y Abrir Desmos")
-        self.desmos_button.clicked.connect(self.copy_latex_and_open_desmos)
-        self.layout.addWidget(self.desmos_button)
-
-        # Botón para regresar al menú de análisis numérico
-        self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
-        self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
-        self.layout.addWidget(self.back_to_analysis_menu_button)
-
-        #Area de resultados
-        self.result_area = QTextEdit()
-        self.result_area.setReadOnly(True)
-        self.layout.addWidget(self.result_area)
 
     def regresar_menu_analisis_numerico(self):
         from menu import MenuAnalisisNumerico
         self.menu_analisis_numerico = MenuAnalisisNumerico()
         self.menu_analisis_numerico.show()
         self.close()
-        
-        # Área de resultados
-        self.result_area = QTextEdit()
-        self.result_area.setReadOnly(True)
-        self.layout.addWidget(self.result_area)
-
-        # Cargar MathJax en el QWebEngineView al inicio
-        self.load_mathjax()
 
     def create_math_keyboard(self):
-        # Layout principal para el teclado matemático
         keyboard_layout = QVBoxLayout()
 
         # Primera fila de botones
@@ -129,14 +64,7 @@ class VentanaMetodoBiseccion(QMainWindow):
 
     def insert_text(self, text, label):
         current_text = self.input_function.text()
-        
-        if label in ('+', '-', '×', '÷', '^', '(', ')', 'π', 'e'):
-            display_text = label
-        elif label in ('ln', 'log₁₀', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', '√'):
-            display_text = f"{label}("
-            text += ''
-        else:
-            display_text = label
+        display_text = label if label not in ('+', '-', '×', '÷', '^', '(', ')', 'π', 'e') else label
         
         if text == '**':
             display_text = "^"
@@ -147,7 +75,7 @@ class VentanaMetodoBiseccion(QMainWindow):
         self.input_function.setFocus()
 
     def load_mathjax(self):
-        mathjax_html = """
+        mathjax_html = r"""
         <html>
         <head>
             <script type="text/javascript" async
@@ -156,7 +84,7 @@ class VentanaMetodoBiseccion(QMainWindow):
         </head>
         <body>
             <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
-                \\( \\text{Ingrese una función para ver la renderización} \\)
+                \\( \	ext{Ingrese una función para ver la renderización} \\)
             </div>
         </body>
         </html>
@@ -165,14 +93,11 @@ class VentanaMetodoBiseccion(QMainWindow):
 
     def update_rendered_function(self):
         func_text = self.input_function.text()
-        
-        # Reemplazar operadores de potencia y asegurar multiplicación implícita
         func_text = self.prepare_expression(func_text)
         
         try:
             expr = sympify(func_text)
             self.latex_expr = self.custom_latex_rendering(expr)
-            
             html_content = f"""
             <html>
             <head>
@@ -192,24 +117,79 @@ class VentanaMetodoBiseccion(QMainWindow):
             self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
 
     def prepare_expression(self, expr):
-        # Insertar `*` automáticamente entre un número y una variable o paréntesis
         expr = re.sub(r'(\d)([a-zA-Z(])', r'\1*\2', expr)
-        # Reemplazar ^ con ** para poder usarlo en sympify
         expr = expr.replace('^', '**')
         return expr
 
     def custom_latex_rendering(self, expr):
-        # Convertir la expresión a LaTeX
         expr_latex = latex(expr)
-        
-        # Reemplazar log por ln en LaTeX para mostrar logaritmo natural
         expr_latex = expr_latex.replace(r'\log', r'\ln')
-        
-        # Mostrar logaritmo en base específica como \log_{base}
         expr_latex = re.sub(r'\\log_([a-zA-Z0-9]+)', r'\\log_{\1}', expr_latex)
-        
         return expr_latex
 
+    def copy_latex_and_open_desmos(self):
+        if hasattr(self, 'latex_expr'):
+            dialog = QDialog(self)
+            dialog.setWindowTitle("LaTeX de la función")
+            dialog_layout = QVBoxLayout(dialog)
+            
+            latex_box = QTextEdit(self.latex_expr)
+            latex_box.setReadOnly(True)
+            dialog_layout.addWidget(latex_box)
+            
+            buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+            buttons.accepted.connect(dialog.accept)
+            dialog_layout.addWidget(buttons)
+
+            dialog.exec()
+            webbrowser.open(f"https://www.desmos.com/calculator")
+        else:
+            QMessageBox.critical(self, "Error", "Primero ingrese una función válida para copiar su LaTeX.")
+            
+class VentanaMetodoBiseccion(VentanaMetodoBase):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Método de Bisección - Análisis Numérico")
+        self.initUI()
+
+    def initUI(self):
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función en términos de x (por ejemplo: x^2 - 4)")
+        self.input_function.textChanged.connect(self.update_rendered_function)
+        self.layout.addWidget(self.input_function)
+
+        self.rendered_view = QWebEngineView(self)
+        self.rendered_view.setFixedHeight(200)
+        self.layout.addWidget(self.rendered_view)
+        
+        self.layout.addLayout(self.create_math_keyboard())
+        
+        self.input_a = QLineEdit()
+        self.input_a.setPlaceholderText("Ingrese el valor de a (inicio del intervalo)")
+        self.input_b = QLineEdit()
+        self.input_b.setPlaceholderText("Ingrese el valor de b (fin del intervalo)")
+        self.input_tolerance = QLineEdit()
+        self.input_tolerance.setPlaceholderText("Ingrese la tolerancia")
+
+        self.layout.addWidget(self.input_a)
+        self.layout.addWidget(self.input_b)
+        self.layout.addWidget(self.input_tolerance)
+
+        self.start_button = QPushButton("Calcular Raíz")
+        self.start_button.clicked.connect(self.run_bisection)
+        self.layout.addWidget(self.start_button)
+
+        self.desmos_button = QPushButton("Copiar LaTeX y Abrir Desmos")
+        self.desmos_button.clicked.connect(self.copy_latex_and_open_desmos)
+        self.layout.addWidget(self.desmos_button)
+
+        self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
+        self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
+        self.layout.addWidget(self.back_to_analysis_menu_button)
+
+        self.result_area = QTextEdit()
+        self.layout.addWidget(self.result_area)
+        
     def run_bisection(self):
         try:
             func_text = self.prepare_expression(self.input_function.text())
@@ -247,22 +227,76 @@ class VentanaMetodoBiseccion(QMainWindow):
         steps += f"Raíz aproximada encontrada en x = {(a + b) / 2.0}\n"
         return steps
 
-    def copy_latex_and_open_desmos(self):
-        if hasattr(self, 'latex_expr'):
-            dialog = QDialog(self)
-            dialog.setWindowTitle("LaTeX de la función")
-            dialog_layout = QVBoxLayout(dialog)
-            
-            latex_box = QTextEdit(self.latex_expr)
-            latex_box.setReadOnly(True)
-            dialog_layout.addWidget(latex_box)
-            
-            buttons = QDialogButtonBox(QDialogButtonBox.Ok)
-            buttons.accepted.connect(dialog.accept)
-            dialog_layout.addWidget(buttons)
+class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Método de Newton-Raphson - Análisis Numérico")
+        self.initUI()
 
-            # Mostrar el diálogo y abrir Desmos con la función LaTeX en el portapapeles
-            dialog.exec()
-            webbrowser.open(f"https://www.desmos.com/calculator")
-        else:
-            QMessageBox.critical(self, "Error", "Primero ingrese una función válida para copiar su LaTeX.")
+    def initUI(self):
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función en términos de x (por ejemplo: x^2 - 4)")
+        self.input_function.textChanged.connect(self.update_rendered_function)
+        self.layout.addWidget(QLabel("Función f(x):"))
+        self.layout.addWidget(self.input_function)
+
+        self.rendered_view = QWebEngineView(self)
+        self.rendered_view.setFixedHeight(200)
+        self.layout.addWidget(self.rendered_view)
+        
+        self.layout.addLayout(self.create_math_keyboard())
+
+        self.input_initial_value = QLineEdit()
+        self.input_initial_value.setPlaceholderText("Ingrese el valor inicial (x0)")
+        self.layout.addWidget(QLabel("Valor inicial (x0):"))
+        self.layout.addWidget(self.input_initial_value)
+
+        self.result_area = QTextEdit()
+        self.result_area.setReadOnly(True)
+        self.layout.addWidget(self.result_area)
+
+        self.start_button = QPushButton("Calcular Raíz - Newton-Raphson")
+        self.start_button.clicked.connect(self.run_newton_raphson)
+        self.layout.addWidget(self.start_button)
+
+        self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
+        self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
+        self.layout.addWidget(self.back_to_analysis_menu_button)
+
+    def run_newton_raphson(self):
+        try:
+            func_text = self.prepare_expression(self.input_function.text())
+            x = symbols('x')
+            func = sympify(func_text)
+            derivative = func.diff(x)
+            x0 = float(self.input_initial_value.text())
+            
+            tol = 1e-6
+            max_iter = 100
+            iter_count = 0
+            error = float('inf')
+            results = []
+
+            while error > tol and iter_count < max_iter:
+                f_x0 = func.evalf(subs={x: x0})
+                f_prime_x0 = derivative.evalf(subs={x: x0})
+
+                if f_prime_x0 == 0:
+                    raise ZeroDivisionError("La derivada es cero. No se puede continuar con el método.")
+
+                x1 = x0 - f_x0 / f_prime_x0
+                error = abs(x1 - x0)
+                results.append(f"Iteración {iter_count + 1}: x = {x1}, error = {error}")
+                x0 = x1
+                iter_count += 1
+
+            if iter_count == max_iter:
+                results.append("El método no convergió después del número máximo de iteraciones.")
+            else:
+                results.append(f"El método convergió en {iter_count} iteraciones. La raíz es aproximadamente x = {x1:.6f}")
+
+            self.result_area.setText("\n".join(results))
+        except ZeroDivisionError as e:
+            self.result_area.setText(f"Error: {e}")
+        except Exception as e:
+            self.result_area.setText(f"Error en la entrada: {e}")
