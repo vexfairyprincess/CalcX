@@ -1,4 +1,5 @@
 # utils.py
+
 from sympy import sympify
 
 def evaluar_expresion(expresion):

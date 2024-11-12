@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtGui import QFont, QPixmap
 import sys
-from Ventanas_menu import *
+from ventanasMenu import *
 from analisisNumerico import *
 
 class MenuPrincipal(QMainWindow):
