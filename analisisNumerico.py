@@ -1,5 +1,6 @@
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout,
+                            QTextEdit, QDialog, QDialogButtonBox, QMessageBox, QApplication)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt, pyqtSignal
 import webbrowser
