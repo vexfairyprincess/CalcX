@@ -504,9 +504,15 @@ class MenuAnalisisNumerico(QMainWindow):
         self.boton_biseccion.clicked.connect(self.abrir_metodo_biseccion)
         self.layout.addWidget(self.boton_biseccion, 1, 1, alignment=Qt.AlignCenter)
 
+        # Newton-Raphson Method Button
+        self.boton_newton_raphson = QPushButton("Método de Newton-Raphson", self)
+        self.boton_newton_raphson.setFixedSize(400, 50)
+        self.boton_newton_raphson.clicked.connect(self.abrir_metodo_newton_raphson)
+        self.layout.addWidget(self.boton_newton_raphson, 2, 1, alignment=Qt.AlignCenter)
+
         # Buttons to adjust the font size (optional)
         botones_fuente_layout = QHBoxLayout()
-        self.layout.addLayout(botones_fuente_layout, 2, 1, alignment=Qt.AlignCenter)
+        self.layout.addLayout(botones_fuente_layout, 3, 1, alignment=Qt.AlignCenter)
 
         self.boton_aumentar_fuente = QPushButton("Aumentar tamaño de fuente", self)
         self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
@@ -520,7 +526,7 @@ class MenuAnalisisNumerico(QMainWindow):
         self.boton_regresar = QPushButton("Regresar", self)
         self.boton_regresar.setFixedSize(150, 40)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
-        self.layout.addWidget(self.boton_regresar, 3, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.layout.addWidget(self.boton_regresar, 4, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
         # Update the style
         self.actualizar_fuente_local(self.tamano_fuente)
@@ -533,8 +539,14 @@ class MenuAnalisisNumerico(QMainWindow):
 
     def abrir_metodo_biseccion(self):
         # Abre la ventana del método de bisección
-        self.ventana_biseccion = VentanaMetodoBiseccion()
+        self.ventana_biseccion = VentanaMetodoBiseccion(self.tamano_fuente)
         self.ventana_biseccion.show()
+        self.close()
+
+    def abrir_metodo_newton_raphson(self):
+        # Abre la ventana del método de Newton-Raphson
+        self.ventana_newton_raphson = VentanaMetodoNewtonRaphson(self.tamano_fuente)
+        self.ventana_newton_raphson.show()
         self.close()
 
     def aumentar_tamano_fuente(self):
