@@ -307,7 +307,7 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
 
         # Rendered Function View
         self.rendered_view = QWebEngineView(self)
-        self.rendered_view.setFixedHeight(100)
+        self.rendered_view.setFixedHeight(150)
         self.layout.addWidget(self.rendered_view, 3, 1)
 
         # Initial Value Input
