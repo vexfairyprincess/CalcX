@@ -1,7 +1,6 @@
 #analisisNumerico.py
 
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                            QPushButton, QTextEdit, QDialog, QDialogButtonBox, QMessageBox, QApplication)
+from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QClipboard
@@ -374,3 +373,119 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
             self.result_area.setText(f"Error: {e}")
         except Exception as e:
             self.result_area.setText(f"Error en la entrada: {e}")
+
+class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
+    def __init__(self):
+        super().__init__()
+        self.InitUI()
+    
+    def InitUI(self):
+        self.setWindowTitle("Método de Falsa Posición")
+
+        # Configurar el campo de entrada de la función
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función en términos de x (por ejemplo: x^2 - 4)")
+        self.input_function.textChanged.connect(self.update_rendered_function)
+        self.layout.addWidget(self.input_function)
+
+        # Configurar el visor de la función renderizada
+        self.rendered_view = QWebEngineView(self)
+        self.rendered_view.setFixedHeight(200)
+        self.layout.addWidget(self.rendered_view)
+
+        # Agregar el teclado matemático
+        self.layout.addLayout(self.create_math_keyboard())
+
+        # Crear campos para el intervalo, tolerancia y número máximo de iteraciones
+        self.xl_input = QLineEdit()
+        self.xl_input.setPlaceholderText("Ingrese el valor de xl (intervalo inferior)")
+        self.layout.addWidget(self.xl_input)
+
+        self.xu_input = QLineEdit()
+        self.xu_input.setPlaceholderText("Ingrese el valor de xu (intervalo superior)")
+        self.layout.addWidget(self.xu_input)
+
+        self.tol_input = QLineEdit()
+        self.tol_input.setPlaceholderText("Ingrese la tolerancia")
+        self.layout.addWidget(self.tol_input)
+
+        self.iter_input = QLineEdit()
+        self.iter_input.setPlaceholderText("Ingrese el número máximo de iteraciones")
+        self.layout.addWidget(self.iter_input)
+
+        # Botón para ejecutar el cálculo
+        self.calc_button = QPushButton("Calcular Raíz")
+        self.calc_button.clicked.connect(self.ejecutar_falsa_posicion)
+        self.layout.addWidget(self.calc_button)
+
+        # Botón para copiar LaTeX y abrir en Desmos
+        self.desmos_button = QPushButton("Copiar LaTeX y Abrir Desmos")
+        self.desmos_button.clicked.connect(self.copy_latex_and_open_desmos)
+        self.layout.addWidget(self.desmos_button)
+
+        # Botón para regresar al menú de análisis numérico
+        self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
+        self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
+        self.layout.addWidget(self.back_to_analysis_menu_button)
+
+        # Área de texto para mostrar resultados
+        self.result_display = QTextEdit()
+        self.result_display.setReadOnly(True)
+        self.layout.addWidget(self.result_display)
+
+        # Ajusta el tamaño de la ventana
+        self.resize(400, 500)
+
+        
+
+    def ejecutar_falsa_posicion(self):
+        try:
+            # Obtiene los valores de entrada de la interfaz
+            funcion = self.getFunctionFromInput(self.input_function.text())
+            xl = float(self.xl_input.text())
+            xu = float(self.xu_input.text())
+            tolerancia = float(self.tol_input.text())
+            iter_max = int(self.iter_input.text())
+            
+            # Valida que xl y xu encierren una raíz
+            if funcion(xl) * funcion(xu) >= 0:
+                raise ValueError("El intervalo [xl, xu] no encierra una raíz.")
+            
+            # Ejecuta el cálculo del método de Falsa Posición
+            self.resultado, self.error, self.iteraciones = self.calcular_raiz(funcion, xl, xu, tolerancia, iter_max)
+            self.mostrar_resultados()
+
+        except Exception as e:
+            self.result_display.setText(f"Error: {str(e)}")
+
+    def calcular_raiz(self, funcion, xl, xu, tolerancia, iter_max):
+        iteraciones = 0
+        xr = xl  # Valor inicial de xr
+        error_aprox = float('inf')  # Error inicial alto
+
+        # Iteración del método de Falsa Posición
+        while error_aprox > tolerancia and iteraciones < iter_max:
+            xr_prev = xr
+            # Cálculo de xr usando la fórmula de Falsa Posición
+            xr = xu - (funcion(xu) * (xl - xu)) / (funcion(xl) - funcion(xu))
+            
+            # Actualización del intervalo
+            if funcion(xl) * funcion(xr) < 0:
+                xu = xr
+            elif funcion(xu) * funcion(xr) < 0:
+                xl = xr
+            else:
+                break  # Si f(xr) es aproximadamente cero, encontramos la raíz
+
+            # Cálculo del error relativo
+            if xr != 0:
+                error_aprox = abs((xr - xr_prev) / xr) * 100
+            iteraciones += 1
+
+        return xr, error_aprox, iteraciones
+
+    def mostrar_resultados(self):
+        # Muestra los resultados en el área de resultados de la UI
+        self.result_display.setText(f"Raíz aproximada: {self.resultado}\n"
+                                    f"Error aproximado: {self.error}%\n"
+                                    f"Iteraciones: {self.iteraciones}")

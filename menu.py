@@ -510,9 +510,14 @@ class MenuAnalisisNumerico(QMainWindow):
         self.boton_newton_raphson.clicked.connect(self.abrir_metodo_newton_raphson)
         self.layout.addWidget(self.boton_newton_raphson, 2, 1, alignment=Qt.AlignCenter)
 
-        # Buttons to adjust the font size (optional)
+        # False Position Method Button
+        self.boton_falsa_posicion = QPushButton("Método de Falsa Posición", self)
+        self.boton_falsa_posicion.setFixedSize(400, 50)
+        self.boton_falsa_posicion.clicked.connect(self.abrir_metodo_falsa_posicion)
+        self.layout.addWidget(self.boton_falsa_posicion, 3, 1, alignment=Qt.AlignCenter)
+        
         botones_fuente_layout = QHBoxLayout()
-        self.layout.addLayout(botones_fuente_layout, 3, 1, alignment=Qt.AlignCenter)
+        self.layout.addLayout(botones_fuente_layout, 5, 1, alignment=Qt.AlignCenter)
 
         self.boton_aumentar_fuente = QPushButton("Aumentar tamaño de fuente", self)
         self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
@@ -526,7 +531,7 @@ class MenuAnalisisNumerico(QMainWindow):
         self.boton_regresar = QPushButton("Regresar", self)
         self.boton_regresar.setFixedSize(150, 40)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
-        self.layout.addWidget(self.boton_regresar, 4, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.layout.addWidget(self.boton_regresar, 6, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
         # Update the style
         self.actualizar_fuente_local(self.tamano_fuente)
@@ -547,6 +552,12 @@ class MenuAnalisisNumerico(QMainWindow):
         # Abre la ventana del método de Newton-Raphson
         self.ventana_newton_raphson = VentanaMetodoNewtonRaphson()
         self.ventana_newton_raphson.show()
+        self.close()
+    
+    def abrir_metodo_falsa_posicion(self):
+        # Abre la ventana del método de falsa posición
+        self.ventana_falsa_posicion = VentanaMetodoFalsaPosicion()
+        self.ventana_falsa_posicion.show()
         self.close()
 
     def aumentar_tamano_fuente(self):
