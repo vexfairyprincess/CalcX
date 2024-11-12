@@ -330,11 +330,79 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         self.start_button.clicked.connect(self.run_newton_raphson)
         self.layout.addWidget(self.start_button, 8, 1, alignment=Qt.AlignCenter)
 
+        self.desmos_button = QPushButton("Copiar LaTeX y Abrir Desmos")
+        self.desmos_button.clicked.connect(self.copy_latex_and_open_desmos)
+        self.layout.addWidget(self.desmos_button, 9, 1, alignment=Qt.AlignCenter)
+
         # Back Button
         self.back_to_analysis_menu_button = QPushButton("Regresar al menú")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
-        self.layout.addWidget(self.back_to_analysis_menu_button, 9, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.layout.addWidget(self.back_to_analysis_menu_button, 10, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.actualizar_fuente_local(self.tamano_fuente)
+
+    def update_rendered_function(self):
+        func_text = self.input_function.text()
+        func_text = self.prepare_expression(func_text)
+
+        try:
+            x = symbols('x')
+            expr = sympify(func_text)
+            derivative = expr.diff(x)  # Calcula la derivada de la función
+            # Renderizar en LaTeX
+            self.latex_expr = self.custom_latex_rendering(expr)
+            self.latex_derivative = self.custom_latex_rendering(derivative)
+            html_content = f"""
+            <html>
+            <head>
+                <script type="text/javascript" async
+                    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js">
+                </script>
+            </head>
+            <body>
+                <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
+                    <p>\\( f(x) = {self.latex_expr} \\)</p>
+                    <p>\\( f'(x) = {self.latex_derivative} \\)</p>
+                </div>
+            </body>
+            </html>
+            """
+            self.rendered_view.setHtml(html_content)
+        except:
+            self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
+
+    def copy_latex_and_open_desmos(self):
+        # Verificar que ambas expresiones estén disponibles
+        if hasattr(self, 'latex_expr') and hasattr(self, 'latex_derivative'):
+            # Crear el cuadro de diálogo para mostrar ambas expresiones
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Copiar LaTeX para Desmos")
+            dialog_layout = QVBoxLayout(dialog)
+
+            # Caja de texto para la función original con botón de copiar
+            function_box = QTextEdit(self.latex_expr)
+            function_box.setReadOnly(True)
+            dialog_layout.addWidget(QLabel("Función f(x):"))
+            dialog_layout.addWidget(function_box)
+            copy_function_button = QPushButton("Copiar f(x)")
+            copy_function_button.clicked.connect(lambda: QApplication.clipboard().setText(self.latex_expr))
+            dialog_layout.addWidget(copy_function_button)
+
+            # Caja de texto para la derivada con botón de copiar
+            derivative_box = QTextEdit(self.latex_derivative)
+            derivative_box.setReadOnly(True)
+            dialog_layout.addWidget(QLabel("Derivada f'(x):"))
+            dialog_layout.addWidget(derivative_box)
+            copy_derivative_button = QPushButton("Copiar f'(x)")
+            copy_derivative_button.clicked.connect(lambda: QApplication.clipboard().setText(self.latex_derivative))
+            dialog_layout.addWidget(copy_derivative_button)
+
+            # Botón para abrir Desmos sin cerrar el cuadro de diálogo
+            open_desmos_button = QPushButton("Abrir Desmos")
+            open_desmos_button.clicked.connect(lambda: webbrowser.open("https://www.desmos.com/calculator"))
+            dialog_layout.addWidget(open_desmos_button)
+            dialog.exec()
+        else:
+            QMessageBox.critical(self, "Error", "Primero ingrese una función válida para copiar su LaTeX.")
 
     def run_newton_raphson(self):
         try:
