@@ -441,7 +441,9 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
     def ejecutar_falsa_posicion(self):
         try:
             # Obtiene los valores de entrada de la interfaz
-            funcion = self.getFunctionFromInput(self.input_function.text())
+            func_text = self.prepare_expression(self.input_function.text())
+            x = symbols('x')
+            funcion = lambdify(x, sympify(func_text), 'math')
             xl = float(self.xl_input.text())
             xu = float(self.xu_input.text())
             tolerancia = float(self.tol_input.text())
