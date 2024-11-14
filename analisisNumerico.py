@@ -491,3 +491,75 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         self.result_display.setText(f"Raíz aproximada: {self.resultado}\n"
                                     f"Error aproximado: {self.error}%\n"
                                     f"Iteraciones: {self.iteraciones}")
+    
+class VentanaMetodoSecante(VentanaMetodoBase):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Método de la Secante - Análisis Numérico")	
+        self.initUI()
+        
+    def initUI(self):
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función en términos de x (por ejemplo: x^2 - 4)")
+        self.input_function.textChanged.connect(self.update_rendered_function)
+        self.layout.addWidget(self.input_function)
+        
+        self.rendered_view = QWebEngineView(self)
+        self.rendered_view.setFixedHeight(250)
+        self.layout.addWidget(self.rendered_view)
+        
+        self.layout.addLayout(self.create_math_keyboard())
+        
+        self.input_x0 = QLineEdit()
+        self.input_x0.setPlaceholderText("Ingrese el valor inicial x0:")
+        self.layout.addWidget(QLabel("Valor inicial (x0):"))
+        self.layout.addWidget(self.input_x0)
+        
+        self.input_x1 = QLineEdit()
+        self.input_x1.setPlaceholderText("Ingrese el valor inicial x1:")
+        self.layout.addWidget(QLabel("Valor inicial (x1):"))
+        self.layout.addWidget(self.input_x1)
+        
+        self.result_area = QTextEdit()
+        self.result_area.setReadOnly(True)
+        self.layout.addWidget(self.result_area)
+        
+        self.start_button = QPushButton("Calcular Raíz - Secante")
+        self.start_button.clicked.connect(self.run_secant)
+        self.layout.addWidget(self.start_button)
+        
+        self.desmos_button = QPushButton("Copiar LaTeX y Abrir Desmos")
+        self.desmos_button.clicked.connect(self.copy_latex_and_open_desmos)
+        self.layout.addWidget(self.desmos_button)
+        
+        self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
+        self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
+        self.layout.addWidget(self.back_to_analysis_menu_button)
+        
+    def run_secant(self):
+        try:
+            x = symbols('x')
+            funcion = sympify(self.input_function.text())
+            x0 = float(self.input_x0.text())
+            x1 = float(self.input_x1.text())
+            
+            tol = 1e-5
+            max_iter = 100
+            for i in range(max_iter):
+                fx0 = funcion.subs(x, x0)
+                fx1 = funcion.subs(x, x1)
+                
+                #Formula de la secante
+                x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0)
+                
+                #Verificar convergencia
+                if abs(x2 - x1) < tol:
+                    self.resultado_label.setText(f"Raíz aproximada: {x2:.5f}")
+                    return
+                
+                x0, x1 = x1, x2
+                
+            self.resultado_label.setText("No converge en el numero maximo de iteraciones")
+        except Exception as e:
+            self.resultado_label.setText(f"Error: {e}")
+            

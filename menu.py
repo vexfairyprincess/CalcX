@@ -516,8 +516,14 @@ class MenuAnalisisNumerico(QMainWindow):
         self.boton_falsa_posicion.clicked.connect(self.abrir_metodo_falsa_posicion)
         self.layout.addWidget(self.boton_falsa_posicion, 3, 1, alignment=Qt.AlignCenter)
         
+        # Boton de metodo secante
+        self.boton_secante = QPushButton("Método de la Secante", self)
+        self.boton_secante.setFixedSize(400, 50)
+        self.boton_secante.clicked.connect(self.abrir_metodo_secante)
+        self.layout.addWidget(self.boton_secante, 4, 1, alignment=Qt.AlignCenter)
+        
         botones_fuente_layout = QHBoxLayout()
-        self.layout.addLayout(botones_fuente_layout, 5, 1, alignment=Qt.AlignCenter)
+        self.layout.addLayout(botones_fuente_layout, 6, 1, alignment=Qt.AlignCenter)
 
         self.boton_aumentar_fuente = QPushButton("Aumentar tamaño de fuente", self)
         self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
@@ -558,6 +564,12 @@ class MenuAnalisisNumerico(QMainWindow):
         # Abre la ventana del método de falsa posición
         self.ventana_falsa_posicion = VentanaMetodoFalsaPosicion()
         self.ventana_falsa_posicion.show()
+        self.close()
+        
+    def abrir_metodo_secante(self):
+        # Abre la ventana del método de la secante
+        self.ventana_secante = VentanaMetodoSecante()
+        self.ventana_secante.show()
         self.close()
 
     def aumentar_tamano_fuente(self):
