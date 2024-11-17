@@ -1,21 +1,70 @@
 # analisisNumerico.py
 
+import sys
+import os
+import re
+import numpy as np
+from sympy import symbols, sympify, lambdify, latex, diff
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                            QTextEdit, QDialog, QDialogButtonBox, QApplication, QMessageBox)
+                            QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl, QThread, pyqtSignal
 from PyQt5.QtGui import QClipboard
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtMultimediaWidgets import QVideoWidget
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from sympy import *
-import re
-import numpy as np
+from manim import *
+logger.setLevel("ERROR")  # Ocultar mensajes de registro de Manim
+
+class AnimationThread(QThread):
+    finished = pyqtSignal(str)
+
+    def __init__(self, method, *args):
+        super().__init__()
+        self.method = method
+        self.args = args
+
+    def run(self):
+        from manim import config
+
+        # Directorio donde se guardará la animación
+        output_dir = os.path.join(os.getcwd(), "videos")
+        os.makedirs(output_dir, exist_ok=True)  # Crea el directorio si no existe
+
+        # Ruta absoluta del archivo de salida
+        output_file = os.path.join(output_dir, f"{self.method}_animation.mp4")
+
+        # Configuración de Manim
+        config.output_file = output_file
+        config.format = "mp4"
+        config.quality = "high_quality"
+        config.media_dir = output_dir  # Opcionalmente, establecer media_dir al mismo directorio
+        config.disable_caching = True
+        config.progress_bar = 'none'
+
+        # Crear la instancia de la escena correspondiente
+        if self.method == 'bisection':
+            scene = BisectionAnimation(*self.args)
+        elif self.method == 'newton':
+            scene = NewtonRaphsonAnimation(*self.args)
+        elif self.method == 'false_position':
+            scene = FalsePositionAnimation(*self.args)
+        elif self.method == 'secant':
+            scene = SecantMethodAnimation(*self.args)
+
+        # Renderizar la escena
+        try:
+            scene.render()
+            self.finished.emit(output_file)
+        except Exception as e:
+            self.finished.emit(f"Error: {e}")
 
 class VentanaMetodoBase(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setGeometry(100, 100, 1400, 800)  # Ventana más alargada
+        self.setGeometry(100, 100, 1400, 800)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QHBoxLayout(self.central_widget)
@@ -154,6 +203,26 @@ class VentanaMetodoBase(QMainWindow):
     def update_plot(self):
         pass  # Este método será implementado en las clases derivadas
 
+    def play_animation(self, video_path):
+        # Crear una ventana para reproducir el video
+        self.video_window = QMainWindow(self)
+        self.video_window.setWindowTitle("Animación")
+        self.video_window.resize(800, 600)
+
+        # Configurar el reproductor de video
+        self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        video_widget = QVideoWidget()
+        self.video_window.setCentralWidget(video_widget)
+        self.media_player.setVideoOutput(video_widget)
+
+        # Cargar el video
+        video_url = QUrl.fromLocalFile(os.path.abspath(video_path))
+        self.media_player.setMedia(QMediaContent(video_url))
+
+        # Reproducir el video
+        self.media_player.play()
+        self.video_window.show()
+
 class VentanaMetodoBiseccion(VentanaMetodoBase):
     def __init__(self):
         super().__init__()
@@ -189,6 +258,11 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         self.start_button.clicked.connect(self.run_bisection)
         self.control_layout.addWidget(self.start_button)
 
+        self.animation_button = QPushButton("Ver Animación")
+        self.animation_button.setEnabled(False)
+        self.animation_button.clicked.connect(self.generate_animation)
+        self.control_layout.addWidget(self.animation_button)
+
         self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
         self.control_layout.addWidget(self.back_to_analysis_menu_button)
@@ -200,15 +274,17 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         try:
             func_text = self.prepare_expression(self.input_function.text())
             x = symbols('x')
-            func_sympy = sympify(func_text)
-            func = lambdify(x, func_sympy, 'numpy')
-            a = float(self.input_a.text())
-            b = float(self.input_b.text())
+            self.func_sympy = sympify(func_text)
+            func = lambdify(x, self.func_sympy, 'numpy')
+            self.a = float(self.input_a.text())
+            self.b = float(self.input_b.text())
             tol = float(self.input_tolerance.text())
 
-            result, steps_list = self.bisection(func, a, b, tol)
+            result, steps_list = self.bisection(func, self.a, self.b, tol)
             self.result_area.setText(result)
-            self.plot_function(func_sympy, a, b, steps_list)
+            self.plot_function(self.func_sympy, self.a, self.b, steps_list)
+            self.steps_list = steps_list  # Guardar para la animación
+            self.animation_button.setEnabled(True)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error en la entrada: {e}")
 
@@ -290,6 +366,66 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         except Exception:
             pass
 
+    def generate_animation(self):
+        # Mostrar diálogo de progreso
+        progress_dialog = QProgressDialog("Renderizando animación, por favor espere...", None, 0, 0, self)
+        progress_dialog.setWindowTitle("Generando Animación")
+        progress_dialog.setWindowModality(Qt.WindowModal)
+        progress_dialog.show()
+
+        # Crear y ejecutar el hilo de animación
+        self.animation_thread = AnimationThread('bisection', self.func_sympy, self.a, self.b, self.steps_list)
+        self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
+        self.animation_thread.start()
+
+    def on_animation_finished(self, video_path, progress_dialog):
+        progress_dialog.close()
+        if "Error" in video_path:
+            QMessageBox.critical(self, "Error", video_path)
+        else:
+            self.play_animation(video_path)
+
+class BisectionAnimation(Scene):
+    def __init__(self, func_sympy, a, b, steps_list, **kwargs):
+        super().__init__(**kwargs)
+        self.func_sympy = func_sympy
+        self.a = a
+        self.b = b
+        self.steps_list = steps_list
+
+    def construct(self):
+        x = symbols('x')
+        func = lambdify(x, self.func_sympy, 'numpy')
+
+        # Crear ejes
+        axes = Axes(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            x_length=10,
+            y_length=6,
+            tips=False
+        ).add_coordinates()
+
+        # Graficar la función
+        graph = axes.plot(lambda x: func(x), color=BLUE)
+
+        # Animar la gráfica
+        self.play(Create(axes), Create(graph))
+        self.wait(1)
+
+        # Animar el método de bisección
+        for a_i, b_i, c_i in self.steps_list:
+            # Marcar puntos a, b y c
+            dot_a = Dot(axes.coords_to_point(a_i, func(a_i)), color=RED)
+            dot_b = Dot(axes.coords_to_point(b_i, func(b_i)), color=RED)
+            dot_c = Dot(axes.coords_to_point(c_i, func(c_i)), color=GREEN)
+
+            self.play(FadeIn(dot_a), FadeIn(dot_b), FadeIn(dot_c))
+            self.wait(0.5)
+
+            # Remover los puntos para la siguiente iteración
+            self.play(FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c))
+
 class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
     def __init__(self):
         super().__init__()
@@ -321,6 +457,11 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         self.start_button = QPushButton("Calcular Raíz - Newton-Raphson")
         self.start_button.clicked.connect(self.run_newton_raphson)
         self.control_layout.addWidget(self.start_button)
+
+        self.animation_button = QPushButton("Ver Animación")
+        self.animation_button.setEnabled(False)
+        self.animation_button.clicked.connect(self.generate_animation)
+        self.control_layout.addWidget(self.animation_button)
 
         self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
@@ -363,9 +504,9 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         try:
             func_text = self.prepare_expression(self.input_function.text())
             x = symbols('x')
-            func_expr = sympify(func_text)
-            derivative_expr = func_expr.diff(x)
-            func = lambdify(x, func_expr, 'numpy')
+            self.func_expr = sympify(func_text)
+            derivative_expr = self.func_expr.diff(x)
+            func = lambdify(x, self.func_expr, 'numpy')
             derivative = lambdify(x, derivative_expr, 'numpy')
             x0 = float(self.input_initial_value.text())
 
@@ -396,7 +537,9 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
                 results.append(f"El método convergió en {iter_count} iteraciones. La raíz es aproximadamente x = {x1:.6f}")
 
             self.result_area.setText("\n".join(results))
-            self.plot_function(func_expr, x_values)
+            self.plot_function(self.func_expr, x_values)
+            self.x_values = x_values  # Guardar para la animación
+            self.animation_button.setEnabled(True)
         except ZeroDivisionError as e:
             self.result_area.setText(f"Error: {e}")
         except Exception as e:
@@ -458,6 +601,68 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         except Exception:
             pass
 
+    def generate_animation(self):
+        # Mostrar diálogo de progreso
+        progress_dialog = QProgressDialog("Renderizando animación, por favor espere...", None, 0, 0, self)
+        progress_dialog.setWindowTitle("Generando Animación")
+        progress_dialog.setWindowModality(Qt.WindowModal)
+        progress_dialog.show()
+
+        # Crear y ejecutar el hilo de animación
+        self.animation_thread = AnimationThread('newton', self.func_expr, self.x_values)
+        self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
+        self.animation_thread.start()
+
+    def on_animation_finished(self, video_path, progress_dialog):
+        progress_dialog.close()
+        if "Error" in video_path:
+            QMessageBox.critical(self, "Error", video_path)
+        else:
+            self.play_animation(video_path)
+
+class NewtonRaphsonAnimation(Scene):
+    def __init__(self, func_expr, x_values, **kwargs):
+        super().__init__(**kwargs)
+        self.func_expr = func_expr
+        self.x_values = x_values
+
+    def construct(self):
+        x = symbols('x')
+        func = lambdify(x, self.func_expr, 'numpy')
+
+        # Crear ejes
+        axes = Axes(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            x_length=10,
+            y_length=6,
+            tips=False
+        ).add_coordinates()
+
+        # Graficar la función
+        graph = axes.plot(lambda x: func(x), color=BLUE)
+
+        # Animar la gráfica
+        self.play(Create(axes), Create(graph))
+        self.wait(1)
+
+        # Animar el método de Newton-Raphson
+        for xi in self.x_values[:-1]:
+            f_xi = func(xi)
+            derivative = diff(self.func_expr, x).subs(x, xi)
+            derivative_func = lambdify(x, derivative, 'numpy')
+
+            # Ecuación de la tangente
+            tangent = lambda x_val: derivative_func(xi) * (x_val - xi) + f_xi
+            tangent_graph = axes.plot(tangent, color=ORANGE)
+
+            dot = Dot(axes.coords_to_point(xi, f_xi), color=RED)
+
+            self.play(Create(tangent_graph), FadeIn(dot))
+            self.wait(0.5)
+
+            self.play(FadeOut(tangent_graph), FadeOut(dot))
+
 class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
     def __init__(self):
         super().__init__()
@@ -504,6 +709,11 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         self.calc_button.clicked.connect(self.ejecutar_falsa_posicion)
         self.control_layout.addWidget(self.calc_button)
 
+        self.animation_button = QPushButton("Ver Animación")
+        self.animation_button.setEnabled(False)
+        self.animation_button.clicked.connect(self.generate_animation)
+        self.control_layout.addWidget(self.animation_button)
+
         # Botón para regresar al menú de análisis numérico
         self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
@@ -514,16 +724,13 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         self.result_display.setReadOnly(True)
         self.control_layout.addWidget(self.result_display)
 
-        # Ajusta el tamaño de la ventana
-        self.resize(400, 500)
-
     def ejecutar_falsa_posicion(self):
         try:
             # Obtiene los valores de entrada de la interfaz
             func_text = self.prepare_expression(self.input_function.text())
             x = symbols('x')
-            func_expr = sympify(func_text)
-            funcion = lambdify(x, func_expr, 'numpy')
+            self.func_expr = sympify(func_text)
+            funcion = lambdify(x, self.func_expr, 'numpy')
             xl = float(self.xl_input.text())
             xu = float(self.xu_input.text())
             tolerancia = float(self.tol_input.text())
@@ -536,7 +743,8 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             # Ejecuta el cálculo del método de Falsa Posición
             self.resultado, self.error, self.iteraciones, self.steps_list = self.calcular_raiz(funcion, xl, xu, tolerancia, iter_max)
             self.mostrar_resultados()
-            self.plot_function(func_expr, xl, xu, self.steps_list)
+            self.plot_function(self.func_expr, xl, xu, self.steps_list)
+            self.animation_button.setEnabled(True)
         except Exception as e:
             self.result_display.setText(f"Error: {str(e)}")
 
@@ -627,6 +835,71 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         except Exception:
             pass
 
+    def generate_animation(self):
+        # Mostrar diálogo de progreso
+        progress_dialog = QProgressDialog("Renderizando animación, por favor espere...", None, 0, 0, self)
+        progress_dialog.setWindowTitle("Generando Animación")
+        progress_dialog.setWindowModality(Qt.WindowModal)
+        progress_dialog.show()
+
+        # Crear y ejecutar el hilo de animación
+        self.animation_thread = AnimationThread('false_position', self.func_expr, self.steps_list)
+        self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
+        self.animation_thread.start()
+
+    def on_animation_finished(self, video_path, progress_dialog):
+        progress_dialog.close()
+        if "Error" in video_path:
+            QMessageBox.critical(self, "Error", video_path)
+        else:
+            self.play_animation(video_path)
+
+class FalsePositionAnimation(Scene):
+    def __init__(self, func_expr, steps_list, **kwargs):
+        super().__init__(**kwargs)
+        self.func_expr = func_expr
+        self.steps_list = steps_list
+
+    def construct(self):
+        x = symbols('x')
+        func = lambdify(x, self.func_expr, 'numpy')
+
+        # Crear ejes
+        axes = Axes(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            x_length=10,
+            y_length=6,
+            tips=False
+        ).add_coordinates()
+
+        # Graficar la función
+        graph = axes.plot(lambda x: func(x), color=BLUE)
+
+        # Animar la gráfica
+        self.play(Create(axes), Create(graph))
+        self.wait(1)
+
+        # Animar el método de Falsa Posición
+        for xl_i, xu_i, xr_i in self.steps_list:
+            f_xl = func(xl_i)
+            f_xu = func(xu_i)
+
+            # Línea entre (xl, f(xl)) y (xu, f(xu))
+            secant_line = axes.plot_line_graph(
+                x_values=[xl_i, xu_i],
+                y_values=[f_xl, f_xu],
+                add_vertex_dots=False,
+                line_color=ORANGE
+            )
+
+            dot_xr = Dot(axes.coords_to_point(xr_i, func(xr_i)), color=GREEN)
+
+            self.play(Create(secant_line), FadeIn(dot_xr))
+            self.wait(0.5)
+
+            self.play(FadeOut(secant_line), FadeOut(dot_xr))
+
 class VentanaMetodoSecante(VentanaMetodoBase):
     def __init__(self):
         super().__init__()
@@ -665,6 +938,11 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         self.start_button.clicked.connect(self.run_secant)
         self.control_layout.addWidget(self.start_button)
 
+        self.animation_button = QPushButton("Ver Animación")
+        self.animation_button.setEnabled(False)
+        self.animation_button.clicked.connect(self.generate_animation)
+        self.control_layout.addWidget(self.animation_button)
+
         self.back_to_analysis_menu_button = QPushButton("Regresar al Menú de Análisis Numérico")
         self.back_to_analysis_menu_button.clicked.connect(self.regresar_menu_analisis_numerico)
         self.control_layout.addWidget(self.back_to_analysis_menu_button)
@@ -673,8 +951,8 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         try:
             x = symbols('x')
             func_text = self.prepare_expression(self.input_function.text())
-            func_expr = sympify(func_text)
-            funcion = lambdify(x, func_expr, 'numpy')
+            self.func_expr = sympify(func_text)
+            funcion = lambdify(x, self.func_expr, 'numpy')
             x0 = float(self.input_x0.text())
             x1 = float(self.input_x1.text())
 
@@ -697,7 +975,9 @@ class VentanaMetodoSecante(VentanaMetodoBase):
                     results.append(f"Raíz aproximada: {x2:.5f}")
                     self.result_area.setText("\n".join(results))
                     x_values.append(x2)
-                    self.plot_function(func_expr, x_values)
+                    self.plot_function(self.func_expr, x_values)
+                    self.x_values = x_values  # Guardar para la animación
+                    self.animation_button.setEnabled(True)
                     return
 
                 x0, x1 = x1, x2
@@ -706,7 +986,8 @@ class VentanaMetodoSecante(VentanaMetodoBase):
 
             results.append("No converge en el número máximo de iteraciones")
             self.result_area.setText("\n".join(results))
-            self.plot_function(func_expr, x_values)
+            self.plot_function(self.func_expr, x_values)
+            self.animation_button.setEnabled(True)
         except Exception as e:
             self.result_area.setText(f"Error: {e}")
 
@@ -763,3 +1044,68 @@ class VentanaMetodoSecante(VentanaMetodoBase):
             self.canvas.draw()
         except Exception:
             pass
+
+    def generate_animation(self):
+        # Mostrar diálogo de progreso
+        progress_dialog = QProgressDialog("Renderizando animación, por favor espere...", None, 0, 0, self)
+        progress_dialog.setWindowTitle("Generando Animación")
+        progress_dialog.setWindowModality(Qt.WindowModal)
+        progress_dialog.show()
+
+        # Crear y ejecutar el hilo de animación
+        self.animation_thread = AnimationThread('secant', self.func_expr, self.x_values)
+        self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
+        self.animation_thread.start()
+
+    def on_animation_finished(self, video_path, progress_dialog):
+        progress_dialog.close()
+        if "Error" in video_path:
+            QMessageBox.critical(self, "Error", video_path)
+        else:
+            self.play_animation(video_path)
+
+class SecantMethodAnimation(Scene):
+    def __init__(self, func_expr, x_values, **kwargs):
+        super().__init__(**kwargs)
+        self.func_expr = func_expr
+        self.x_values = x_values
+
+    def construct(self):
+        x = symbols('x')
+        func = lambdify(x, self.func_expr, 'numpy')
+
+        # Crear ejes
+        axes = Axes(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            x_length=10,
+            y_length=6,
+            tips=False
+        ).add_coordinates()
+
+        # Graficar la función
+        graph = axes.plot(lambda x: func(x), color=BLUE)
+
+        # Animar la gráfica
+        self.play(Create(axes), Create(graph))
+        self.wait(1)
+
+        # Animar el método de la Secante
+        for i in range(len(self.x_values) - 2):
+            x0, x1 = self.x_values[i], self.x_values[i + 1]
+            fx0, fx1 = func(x0), func(x1)
+
+            # Línea secante
+            secant_line = axes.plot_line_graph(
+                x_values=[x0, x1],
+                y_values=[fx0, fx1],
+                add_vertex_dots=False,
+                line_color=ORANGE
+            )
+
+            dot_x1 = Dot(axes.coords_to_point(x1, fx1), color=RED)
+
+            self.play(Create(secant_line), FadeIn(dot_x1))
+            self.wait(0.5)
+
+            self.play(FadeOut(secant_line), FadeOut(dot_x1))
