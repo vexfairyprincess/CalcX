@@ -155,7 +155,6 @@ class MenuAlgebra(QMainWindow):
         self.menu_vectores = MenuVectores(self.tamano_fuente, self.cambiar_fuente_signal)
         self.menu_vectores.show()
 
-
     def aumentar_tamano_fuente(self):
         self.tamano_fuente += 2
         self.cambiar_fuente_signal.emit(self.tamano_fuente)
@@ -164,7 +163,7 @@ class MenuAlgebra(QMainWindow):
         if self.tamano_fuente > 8:
             self.tamano_fuente -= 2
             self.cambiar_fuente_signal.emit(self.tamano_fuente)
-    
+
     def actualizar_fuente_global(self, tamano):
         fuente = QFont()
         fuente.setPointSize(tamano)
@@ -184,7 +183,8 @@ class MenuAlgebra(QMainWindow):
         self.menu_principal.show()
         self.close()
 
-    #menu matrices
+    # menu matrices
+
 
 class MenuMatrices(QMainWindow):
     def __init__(self, tamano_fuente, cambiar_fuente_signal):
@@ -287,11 +287,6 @@ class MenuMatrices(QMainWindow):
         self.boton_inversa.clicked.connect(self.abrir_inversa_matriz)
         self.layout.addWidget(self.boton_inversa, 6, 1, alignment=Qt.AlignCenter)
 
-        self.boton_producto_matriz = QPushButton("Producto Matriz por Vector", self)
-        self.boton_producto_matriz.setFixedSize(400, 50)
-        self.boton_producto_matriz.clicked.connect(self.abrir_producto_matriz_vector)
-        self.layout.addWidget(self.boton_producto_matriz, 7, 1, alignment=Qt.AlignCenter)
-
         # Botón Regresar
         self.boton_regresar = QPushButton("Regresar", self)
         self.boton_regresar.setFixedSize(150, 40)
@@ -299,17 +294,10 @@ class MenuMatrices(QMainWindow):
         # Agregar el botón al layout principal en la última fila, columna 0, alineado abajo a la izquierda
         self.layout.addWidget(self.boton_regresar, 8, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
-
     def abrir_metodo_escalonado(self):
         self.ventana_escalonado = VentanaEscalonado(self.tamano_fuente)
         self.ventana_escalonado.show()
         self.cambiar_fuente_signal.connect(self.ventana_escalonado.actualizar_fuente_local)
-        self.close()
-
-    def abrir_producto_matriz_vector(self):
-        self.ventana_producto_matriz_vector = VentanaProductoMatrizVector(self.tamano_fuente)
-        self.ventana_producto_matriz_vector.show()
-        self.cambiar_fuente_signal.connect(self.ventana_producto_matriz_vector.actualizar_fuente_local)
         self.close()
 
     def abrir_suma_matrices(self):
@@ -369,7 +357,9 @@ class MenuMatrices(QMainWindow):
             }}
         """)
 
-    #menu vectores
+    # menu vectores
+
+
 class MenuVectores(QMainWindow):
     def __init__(self, tamano_fuente, cambiar_fuente_signal):
         super().__init__()
@@ -462,7 +452,6 @@ class MenuVectores(QMainWindow):
                 font-weight: normal;
             }}
         """)
-
 
 
 class MenuAnalisisNumerico(QMainWindow):

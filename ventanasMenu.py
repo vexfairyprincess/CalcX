@@ -1,4 +1,4 @@
-# ventanasMenu.py
+# menu.py
 
 from utils import evaluar_expresion
 from menu import *
@@ -20,6 +20,7 @@ import sys
 
 
 class VentanaEscalonado(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Método Escalonado")
@@ -224,18 +225,20 @@ class VentanaEscalonado(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaOperacionesCombinadas(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Operaciones Combinadas de Vectores")
         self.setGeometry(100, 100, 1200, 700)
+
         self.tamano_fuente = tamano_fuente
         self.actualizar_fuente_local(self.tamano_fuente)
 
@@ -488,14 +491,15 @@ class VentanaOperacionesCombinadas(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuVectores
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_vectores = MenuVectores(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_vectores.show()
         self.close()
 
 
 class VentanaProductoVectorial(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Multiplicación de Vector Fila por Vector Columna")
@@ -662,14 +666,15 @@ class VentanaProductoVectorial(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuVectores
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_vectores = MenuVectores(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_vectores.show()
         self.close()
 
 
 class VentanaProductoMatrizVector(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Producto Matriz por Vector (Propiedad A(u + v))")
@@ -889,14 +894,15 @@ class VentanaProductoMatrizVector(QWidget):
         return "\n".join(["\t".join([f"{val:.2f}" for val in fila]) for fila in matriz])
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuVectores
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_vectores = MenuVectores(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_vectores.show()
         self.close()
 
 
 class VentanaSumaMatrices(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Suma de Matrices")
@@ -1105,14 +1111,15 @@ class VentanaSumaMatrices(QWidget):
         return texto_matriz
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaTranspuesta(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Transpuesta de la Matriz")
@@ -1231,14 +1238,15 @@ class VentanaTranspuesta(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaMultiplicacionMatrices(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Multiplicación de Matrices")
@@ -1480,14 +1488,15 @@ class VentanaMultiplicacionMatrices(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaDeterminante(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Cálculo del Determinante de la Matriz")
@@ -1616,14 +1625,15 @@ class VentanaDeterminante(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaInversa(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Cálculo de la Inversa de una Matriz")
@@ -1751,14 +1761,15 @@ class VentanaInversa(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaCramer(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Resolver Sistema con Regla de Cramer")
@@ -1897,14 +1908,15 @@ class VentanaCramer(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
 
 class VentanaLU(QWidget):
+    cambiar_fuente_signal = pyqtSignal(int)
     def __init__(self, tamano_fuente):
         super().__init__()
         self.setWindowTitle("Factorización LU")
@@ -2038,10 +2050,10 @@ class VentanaLU(QWidget):
         self.modo_paso_a_paso = not self.modo_paso_a_paso
 
     def regresar_menu_principal(self):
-        self.main_window = MenuAlgebra()
-        self.main_window.tamano_fuente = self.tamano_fuente
-        self.main_window.cambiar_fuente_signal.emit(self.tamano_fuente)
-        self.main_window.show()
+        from menu import MenuMatrices
+        # Pasamos tamano_fuente y cambiar_fuente_signal
+        self.menu_matrices = MenuMatrices(self.tamano_fuente, self.cambiar_fuente_signal)
+        self.menu_matrices.show()
         self.close()
 
     def actualizar_fuente_local(self, tamano):
