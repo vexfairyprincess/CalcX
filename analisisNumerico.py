@@ -280,6 +280,12 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
             self.b = float(self.input_b.text())
             tol = float(self.input_tolerance.text())
 
+            # Validación del intervalo
+            if self.a > self.b:
+                QMessageBox.critical(self, "Error", "El valor de 'a' debe ser menor que 'b'.")
+                self.input_a.setFocus()  # Enfocar el campo 'a' después del error
+                return
+
             result, steps_list = self.bisection(func, self.a, self.b, tol)
             self.result_area.setText(result)
             self.plot_function(self.func_sympy, self.a, self.b, steps_list)
@@ -287,6 +293,7 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
             self.animation_button.setEnabled(True)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error en la entrada: {e}")
+            self.input_function.setFocus()  # Enfocar el campo de función en caso de error general
 
     def bisection(self, func, a, b, tol):
         steps = ""
@@ -736,9 +743,17 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             tolerancia = float(self.tol_input.text())
             iter_max = int(self.iter_input.text())
 
+            # Validación del intervalo
+            if xl > xu:
+                QMessageBox.critical(self, "Error", "El valor de 'xl' debe ser menor que 'xu'.")
+                self.xl_input.setFocus()  # Enfocar el campo 'xl' después del error
+                return
+
             # Valida que xl y xu encierren una raíz
             if funcion(xl) * funcion(xu) >= 0:
-                raise ValueError("El intervalo [xl, xu] no encierra una raíz.")
+                QMessageBox.critical(self, "Error", "El intervalo [xl, xu] no encierra una raíz.")
+                self.xl_input.setFocus()  # Enfocar el campo 'xl' después del error
+                return
 
             # Ejecuta el cálculo del método de Falsa Posición
             self.resultado, self.error, self.iteraciones, self.steps_list = self.calcular_raiz(funcion, xl, xu, tolerancia, iter_max)
@@ -747,6 +762,7 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             self.animation_button.setEnabled(True)
         except Exception as e:
             self.result_display.setText(f"Error: {str(e)}")
+            self.input_function.setFocus()  # Enfocar el campo de función en caso de error general
 
     def calcular_raiz(self, funcion, xl, xu, tolerancia, iter_max):
         iteraciones = 0
