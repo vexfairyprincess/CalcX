@@ -6,7 +6,7 @@ import re
 import numpy as np
 from sympy import symbols, sympify, lambdify, latex, diff
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                            QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog)
+                            QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog, QTableWidget, QTableWidgetItem)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt, QUrl, QThread, pyqtSignal
 from PyQt5.QtGui import QClipboard
@@ -258,6 +258,11 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         self.start_button.clicked.connect(self.run_bisection)
         self.control_layout.addWidget(self.start_button)
 
+        self.show_steps_button = QPushButton("Mostrar pasos")
+        self.show_steps_button.setEnabled(False)
+        self.show_steps_button.clicked.connect(self.mostrar_pasos)
+        self.control_layout.addWidget(self.show_steps_button)
+
         self.animation_button = QPushButton("Ver Animación")
         self.animation_button.setEnabled(False)
         self.animation_button.clicked.connect(self.generate_animation)
@@ -283,17 +288,29 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
             # Validación del intervalo
             if self.a > self.b:
                 QMessageBox.critical(self, "Error", "El valor de 'a' debe ser menor que 'b'.")
-                self.input_a.setFocus()  # Enfocar el campo 'a' después del error
+                self.input_a.setFocus()
                 return
 
-            result, steps_list = self.bisection(func, self.a, self.b, tol)
-            self.result_area.setText(result)
-            self.plot_function(self.func_sympy, self.a, self.b, steps_list)
-            self.steps_list = steps_list  # Guardar para la animación
+            # Ejecutar el método de bisección
+            self.result, self.steps_list = self.bisection(func, self.a, self.b, tol)
+
+            # Mostrar solo la información resumida
+            if self.steps_list:
+                last_step = self.steps_list[-1]
+                c = last_step[2]
+                error_abs = abs(func(c))
+                error_rel = abs((self.b - self.a) / c) * 100
+                num_iter = len(self.steps_list)
+                self.result_area.setText(f"Raíz aproximada: {c}\nError absoluto: {error_abs}\nError relativo: {error_rel}%\nNúmero de iteraciones: {num_iter}")
+            else:
+                self.result_area.setText(self.result)
+
+            self.plot_function(self.func_sympy, self.a, self.b, self.steps_list)
             self.animation_button.setEnabled(True)
+            self.show_steps_button.setEnabled(True)  # Habilitar el botón "Mostrar pasos"
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error en la entrada: {e}")
-            self.input_function.setFocus()  # Enfocar el campo de función en caso de error general
+            self.input_function.setFocus()
 
     def bisection(self, func, a, b, tol):
         steps = ""
@@ -321,6 +338,37 @@ class VentanaMetodoBiseccion(VentanaMetodoBase):
         steps_list.append((a, b, c))
         steps += f"Raíz aproximada encontrada en x = {c}\n"
         return steps, steps_list
+    
+    def mostrar_pasos(self):
+        # Crear la ventana de pasos
+        self.steps_window = QDialog(self)
+        self.steps_window.setWindowTitle("Pasos del Método de Bisección")
+        layout = QVBoxLayout(self.steps_window)
+
+        self.steps_window.resize(800, 600) 
+
+        # Crear la tabla
+        table = QTableWidget()
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["Iteración", "a", "b", "c", "f(c)"])
+        table.setRowCount(len(self.steps_list))
+
+        # Llenar la tabla con los datos
+        for idx, (a_i, b_i, c_i) in enumerate(self.steps_list):
+            table.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
+            table.setItem(idx, 1, QTableWidgetItem(str(a_i)))
+            table.setItem(idx, 2, QTableWidgetItem(str(b_i)))
+            table.setItem(idx, 3, QTableWidgetItem(str(c_i)))
+            table.setItem(idx, 4, QTableWidgetItem(str(self.func_sympy.subs(symbols('x'), c_i))))
+
+        # Ajustar el tamaño de las columnas
+        table.resizeColumnsToContents()
+
+        # Agregar la tabla al layout
+        layout.addWidget(table)
+
+        # Mostrar la ventana
+        self.steps_window.exec_()
 
     def plot_function(self, func_sympy, a, b, steps_list):
         x = symbols('x')
@@ -461,9 +509,14 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         self.result_area.setReadOnly(True)
         self.control_layout.addWidget(self.result_area)
 
-        self.start_button = QPushButton("Calcular Raíz - Newton-Raphson")
+        self.start_button = QPushButton("Calcular Raíz")
         self.start_button.clicked.connect(self.run_newton_raphson)
         self.control_layout.addWidget(self.start_button)
+
+        self.show_steps_button = QPushButton("Mostrar pasos")
+        self.show_steps_button.setEnabled(False)
+        self.show_steps_button.clicked.connect(self.mostrar_pasos)
+        self.control_layout.addWidget(self.show_steps_button)
 
         self.animation_button = QPushButton("Ver Animación")
         self.animation_button.setEnabled(False)
@@ -521,8 +574,7 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
             max_iter = 100
             iter_count = 0
             error = float('inf')
-            results = []
-            x_values = [x0]
+            self.steps_list = []
 
             while error > tol and iter_count < max_iter:
                 f_x0 = func(x0)
@@ -533,24 +585,57 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
 
                 x1 = x0 - f_x0 / f_prime_x0
                 error = abs(x1 - x0)
-                results.append(f"Iteración {iter_count + 1}: x = {x1}, error = {error}")
+                error_relativo = abs(error / x1) * 100 if x1 != 0 else float('inf')
+                self.steps_list.append((iter_count + 1, x0, f_x0, f_prime_x0, x1, error, error_relativo))
+
                 x0 = x1
-                x_values.append(x0)
                 iter_count += 1
 
             if iter_count == max_iter:
-                results.append("El método no convergió después del número máximo de iteraciones.")
+                self.result_area.setText("El método no convergió después del número máximo de iteraciones.")
             else:
-                results.append(f"El método convergió en {iter_count} iteraciones. La raíz es aproximadamente x = {x1:.6f}")
+                self.result_area.setText(f"Raíz aproximada: {x1}\nError absoluto: {error}\nError relativo: {error_relativo}%\nNúmero de iteraciones: {iter_count}")
 
-            self.result_area.setText("\n".join(results))
-            self.plot_function(self.func_expr, x_values)
-            self.x_values = x_values  # Guardar para la animación
+            self.plot_function(self.func_expr, [step[1] for step in self.steps_list])
             self.animation_button.setEnabled(True)
+            self.show_steps_button.setEnabled(True)
         except ZeroDivisionError as e:
             self.result_area.setText(f"Error: {e}")
         except Exception as e:
             self.result_area.setText(f"Error en la entrada: {e}")
+
+    def mostrar_pasos(self):
+        # Crear la ventana de pasos
+        self.steps_window = QDialog(self)
+        self.steps_window.setWindowTitle("Pasos del Método de Newton-Raphson")
+        layout = QVBoxLayout(self.steps_window)
+
+        self.steps_window.resize(900, 600)
+
+        # Crear la tabla
+        table = QTableWidget()
+        table.setColumnCount(7)
+        table.setHorizontalHeaderLabels(["Iteración", "x_i", "f(x_i)", "f'(x_i)", "x_{i+1}", "Error absoluto", "Error relativo (%)"])
+        table.setRowCount(len(self.steps_list))
+
+        # Llenar la tabla con los datos
+        for idx, (iter_num, x_i, f_xi, f_prime_xi, x_next, error_abs, error_rel) in enumerate(self.steps_list):
+            table.setItem(idx, 0, QTableWidgetItem(str(iter_num)))
+            table.setItem(idx, 1, QTableWidgetItem(str(x_i)))
+            table.setItem(idx, 2, QTableWidgetItem(str(f_xi)))
+            table.setItem(idx, 3, QTableWidgetItem(str(f_prime_xi)))
+            table.setItem(idx, 4, QTableWidgetItem(str(x_next)))
+            table.setItem(idx, 5, QTableWidgetItem(str(error_abs)))
+            table.setItem(idx, 6, QTableWidgetItem(str(error_rel)))
+
+        # Ajustar el tamaño de las columnas
+        table.resizeColumnsToContents()
+
+        # Agregar la tabla al layout
+        layout.addWidget(table)
+
+        # Mostrar la ventana
+        self.steps_window.exec_()
 
     def plot_function(self, func_expr, x_values):
         x = symbols('x')
@@ -716,6 +801,11 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         self.calc_button.clicked.connect(self.ejecutar_falsa_posicion)
         self.control_layout.addWidget(self.calc_button)
 
+        self.show_steps_button = QPushButton("Mostrar pasos")
+        self.show_steps_button.setEnabled(False)
+        self.show_steps_button.clicked.connect(self.mostrar_pasos)
+        self.control_layout.addWidget(self.show_steps_button)
+
         self.animation_button = QPushButton("Ver Animación")
         self.animation_button.setEnabled(False)
         self.animation_button.clicked.connect(self.generate_animation)
@@ -746,13 +836,13 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             # Validación del intervalo
             if xl > xu:
                 QMessageBox.critical(self, "Error", "El valor de 'xl' debe ser menor que 'xu'.")
-                self.xl_input.setFocus()  # Enfocar el campo 'xl' después del error
+                self.xl_input.setFocus()
                 return
 
             # Valida que xl y xu encierren una raíz
             if funcion(xl) * funcion(xu) >= 0:
                 QMessageBox.critical(self, "Error", "El intervalo [xl, xu] no encierra una raíz.")
-                self.xl_input.setFocus()  # Enfocar el campo 'xl' después del error
+                self.xl_input.setFocus()
                 return
 
             # Ejecuta el cálculo del método de Falsa Posición
@@ -760,9 +850,10 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             self.mostrar_resultados()
             self.plot_function(self.func_expr, xl, xu, self.steps_list)
             self.animation_button.setEnabled(True)
+            self.show_steps_button.setEnabled(True)
         except Exception as e:
             self.result_display.setText(f"Error: {str(e)}")
-            self.input_function.setFocus()  # Enfocar el campo de función en caso de error general
+            self.input_function.setFocus()
 
     def calcular_raiz(self, funcion, xl, xu, tolerancia, iter_max):
         iteraciones = 0
@@ -776,8 +867,14 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             # Cálculo de xr usando la fórmula de Falsa Posición
             xr = xu - (funcion(xu) * (xl - xu)) / (funcion(xl) - funcion(xu))
 
-            # Guardar los valores para graficar
-            steps_list.append((xl, xu, xr))
+            # Cálculo del error relativo
+            if xr != 0:
+                error_aprox = abs((xr - xr_prev) / xr) * 100
+            else:
+                error_aprox = float('inf')  # Evitar división por cero
+
+            # Guardar los valores para graficar y para los pasos
+            steps_list.append((xl, xu, xr, error_aprox))
 
             # Actualización del intervalo
             if funcion(xl) * funcion(xr) < 0:
@@ -787,18 +884,59 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
             else:
                 break  # Si f(xr) es aproximadamente cero, encontramos la raíz
 
-            # Cálculo del error relativo
-            if xr != 0:
-                error_aprox = abs((xr - xr_prev) / xr) * 100
             iteraciones += 1
 
         return xr, error_aprox, iteraciones, steps_list
 
     def mostrar_resultados(self):
-        # Muestra los resultados en el área de resultados de la UI
-        self.result_display.setText(f"Raíz aproximada: {self.resultado}\n"
-                                    f"Error aproximado: {self.error}%\n"
-                                    f"Iteraciones: {self.iteraciones}")
+        if self.steps_list:
+            last_step = self.steps_list[-1]
+            xr = last_step[2]
+            error_abs = abs(self.func_expr.subs(symbols('x'), xr))
+            error_rel = last_step[3]  # Error relativo de la última iteración
+            num_iter = len(self.steps_list)
+            self.result_display.setText(f"Raíz aproximada: {xr}\nError absoluto: {error_abs}\nError relativo: {error_rel}%\nNúmero de iteraciones: {num_iter}")
+        else:
+            self.result_display.setText("No se encontró raíz.")
+
+    def mostrar_pasos(self):
+        # Crear la ventana de pasos
+        self.steps_window = QDialog(self)
+        self.steps_window.setWindowTitle("Pasos del Método de Falsa Posición")
+        layout = QVBoxLayout(self.steps_window)
+
+        self.steps_window.resize(1000, 600)
+
+        # Crear la tabla
+        table = QTableWidget()
+        table.setColumnCount(8)
+        table.setHorizontalHeaderLabels(["Iteración", "xl", "xu", "xr", "f(xl)", "f(xu)", "f(xr)", "Error relativo (%)"])
+        table.setRowCount(len(self.steps_list))
+
+        funcion = lambdify(symbols('x'), self.func_expr, 'numpy')
+
+        # Llenar la tabla con los datos
+        for idx, (xl_i, xu_i, xr_i, error_relativo) in enumerate(self.steps_list):
+            f_xl = funcion(xl_i)
+            f_xu = funcion(xu_i)
+            f_xr = funcion(xr_i)
+            table.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
+            table.setItem(idx, 1, QTableWidgetItem(f"{xl_i:.6f}"))
+            table.setItem(idx, 2, QTableWidgetItem(f"{xu_i:.6f}"))
+            table.setItem(idx, 3, QTableWidgetItem(f"{xr_i:.6f}"))
+            table.setItem(idx, 4, QTableWidgetItem(f"{f_xl:.6f}"))
+            table.setItem(idx, 5, QTableWidgetItem(f"{f_xu:.6f}"))
+            table.setItem(idx, 6, QTableWidgetItem(f"{f_xr:.6f}"))
+            table.setItem(idx, 7, QTableWidgetItem(f"{error_relativo:.6f}"))
+
+        # Ajustar el tamaño de las columnas
+        table.resizeColumnsToContents()
+
+        # Agregar la tabla al layout
+        layout.addWidget(table)
+
+        # Mostrar la ventana
+        self.steps_window.exec_()
 
     def plot_function(self, func_expr, xl, xu, steps_list):
         x = symbols('x')
@@ -813,7 +951,7 @@ class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
         ax.axvline(0, color='black', linewidth=0.5)
 
         # Dibujar líneas de falsa posición
-        for idx, (xl_i, xu_i, xr_i) in enumerate(steps_list):
+        for idx, (xl_i, xu_i, xr_i, error_relativo) in enumerate(steps_list):
             f_xl = funcion(xl_i)
             f_xu = funcion(xu_i)
             ax.plot([xl_i, xu_i], [f_xl, f_xu], 'r--')
@@ -950,9 +1088,14 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         self.result_area.setReadOnly(True)
         self.control_layout.addWidget(self.result_area)
 
-        self.start_button = QPushButton("Calcular Raíz - Secante")
+        self.start_button = QPushButton("Calcular Raíz")
         self.start_button.clicked.connect(self.run_secant)
         self.control_layout.addWidget(self.start_button)
+
+        self.show_steps_button = QPushButton("Mostrar pasos")
+        self.show_steps_button.setEnabled(False)
+        self.show_steps_button.clicked.connect(self.mostrar_pasos)
+        self.control_layout.addWidget(self.show_steps_button)
 
         self.animation_button = QPushButton("Ver Animación")
         self.animation_button.setEnabled(False)
@@ -974,7 +1117,8 @@ class VentanaMetodoSecante(VentanaMetodoBase):
 
             tol = 1e-5
             max_iter = 100
-            x_values = [x0, x1]
+            self.x_values = [x0, x1]
+            self.steps_list = []
             results = []
             for i in range(max_iter):
                 fx0 = funcion(x0)
@@ -985,25 +1129,26 @@ class VentanaMetodoSecante(VentanaMetodoBase):
 
                 # Fórmula de la secante
                 x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0)
+                error_abs = abs(x2 - x1)
+                error_rel = abs(error_abs / x2) * 100 if x2 != 0 else float('inf')
+                self.steps_list.append((i + 1, x0, x1, x2, fx0, fx1, error_abs, error_rel))
 
                 # Verificar convergencia
-                if abs(x2 - x1) < tol:
-                    results.append(f"Raíz aproximada: {x2:.5f}")
-                    self.result_area.setText("\n".join(results))
-                    x_values.append(x2)
-                    self.plot_function(self.func_expr, x_values)
-                    self.x_values = x_values  # Guardar para la animación
+                if error_abs < tol:
+                    self.result_area.setText(f"Raíz aproximada: {x2}\nError absoluto: {error_abs}\nError relativo: {error_rel}%\nNúmero de iteraciones: {i + 1}")
+                    self.x_values.append(x2)
+                    self.plot_function(self.func_expr, self.x_values)
                     self.animation_button.setEnabled(True)
+                    self.show_steps_button.setEnabled(True)
                     return
 
                 x0, x1 = x1, x2
-                x_values.append(x1)
-                results.append(f"Iteración {i + 1}: x = {x1}, f(x) = {funcion(x1)}")
+                self.x_values.append(x1)
 
-            results.append("No converge en el número máximo de iteraciones")
-            self.result_area.setText("\n".join(results))
-            self.plot_function(self.func_expr, x_values)
+            self.result_area.setText("No converge en el número máximo de iteraciones")
+            self.plot_function(self.func_expr, self.x_values)
             self.animation_button.setEnabled(True)
+            self.show_steps_button.setEnabled(True)
         except Exception as e:
             self.result_area.setText(f"Error: {e}")
 
@@ -1035,6 +1180,40 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         ax.set_ylabel('f(x)')
         ax.legend()
         self.canvas.draw()
+
+    def mostrar_pasos(self):
+        # Crear la ventana de pasos
+        self.steps_window = QDialog(self)
+        self.steps_window.setWindowTitle("Pasos del Método de la Secante")
+        layout = QVBoxLayout(self.steps_window)
+
+        self.steps_window.resize(900, 600)
+
+        # Crear la tabla
+        table = QTableWidget()
+        table.setColumnCount(8)
+        table.setHorizontalHeaderLabels(["Iteración", "x_i-1", "x_i", "x_i+1", "f(x_i-1)", "f(x_i)", "Error absoluto", "Error relativo (%)"])
+        table.setRowCount(len(self.steps_list))
+
+        # Llenar la tabla con los datos
+        for idx, (iter_num, x_prev, x_curr, x_next, f_x_prev, f_x_curr, error_abs, error_rel) in enumerate(self.steps_list):
+            table.setItem(idx, 0, QTableWidgetItem(str(iter_num)))
+            table.setItem(idx, 1, QTableWidgetItem(str(x_prev)))
+            table.setItem(idx, 2, QTableWidgetItem(str(x_curr)))
+            table.setItem(idx, 3, QTableWidgetItem(str(x_next)))
+            table.setItem(idx, 4, QTableWidgetItem(str(f_x_prev)))
+            table.setItem(idx, 5, QTableWidgetItem(str(f_x_curr)))
+            table.setItem(idx, 6, QTableWidgetItem(str(error_abs)))
+            table.setItem(idx, 7, QTableWidgetItem(str(error_rel)))
+
+        # Ajustar el tamaño de las columnas
+        table.resizeColumnsToContents()
+
+        # Agregar la tabla al layout
+        layout.addWidget(table)
+
+        # Mostrar la ventana
+        self.steps_window.exec_()
 
     def update_plot(self):
         try:
