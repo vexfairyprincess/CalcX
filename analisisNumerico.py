@@ -4,7 +4,8 @@ import sys
 import os
 import re
 import numpy as np
-from sympy import symbols, sympify, lambdify, latex, diff
+from sympy import symbols, sympify, lambdify, latex, diff, S, solveset, Interval, Union, FiniteSet, EmptySet
+from sympy.calculus.util import continuous_domain
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                             QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog, QTableWidget, QTableWidgetItem)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -165,10 +166,32 @@ class VentanaMetodoBase(QMainWindow):
 
     def update_rendered_function(self):
         func_text = self.input_function.text()
-        func_text = self.prepare_expression(func_text)
+        func_text_prepared = self.prepare_expression(func_text)
+
+        def determinar_dominio(expr):
+            x = symbols('x')
+            try:
+                func = sympify(expr)
+                domain = continuous_domain(func, x, S.Reals)
+                return domain
+            except Exception:
+                return None
+            
+        def dominio_a_latex(domain):
+            if domain is None or domain == EmptySet:
+                return "Dominio: ∅"
+            else:
+                return f"Dominio: {latex(domain)}"
 
         try:
-            expr = sympify(func_text)
+            x = symbols('x')
+            expr = sympify(func_text_prepared)
+
+            # Determinar el dominio de la función
+            domain = determinar_dominio(expr)
+            domain_latex = dominio_a_latex(domain)
+
+            # Renderizar la función y el dominio en LaTeX
             self.latex_expr = self.custom_latex_rendering(expr)
             html_content = f"""
             <html>
@@ -179,14 +202,16 @@ class VentanaMetodoBase(QMainWindow):
             </head>
             <body>
                 <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
-                    \\( {self.latex_expr} \\)
+                    \\( f(x) = {self.latex_expr} \\)
+                    <br>
+                    \\( {domain_latex} \\)
                 </div>
             </body>
             </html>
             """
             self.rendered_view.setHtml(html_content)
             self.update_plot()
-        except:
+        except Exception:
             self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
 
     def prepare_expression(self, expr):
@@ -531,10 +556,29 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         func_text = self.input_function.text()
         func_text = self.prepare_expression(func_text)
 
+        def determinar_dominio(expr):
+            x = symbols('x')
+            try:
+                func = sympify(expr)
+                domain = continuous_domain(func, x, S.Reals)
+                return domain
+            except Exception:
+                return None
+
+        def dominio_a_latex(domain):
+            if domain is None or domain == EmptySet:
+                return "Dominio: ∅"
+            else:
+                return f"Dominio: {latex(domain)}"
+
         try:
             x = symbols('x')
             expr = sympify(func_text)
             derivative = expr.diff(x)  # Calcula la derivada de la función
+
+            # Determinar el dominio de la función
+            domain = determinar_dominio(expr)
+            domain_latex = dominio_a_latex(domain)
 
             # Renderizar en LaTeX
             self.latex_expr = self.custom_latex_rendering(expr)
@@ -551,13 +595,14 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
                 <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
                     <p>\\( f(x) = {self.latex_expr} \\)</p>
                     <p>\\( f'(x) = {self.latex_derivative} \\)</p>
+                    <p>\\( {domain_latex} \\)</p>
                 </div>
             </body>
             </html>
             """
             self.rendered_view.setHtml(html_content)
             self.update_plot()
-        except:
+        except Exception:
             self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
 
     def run_newton_raphson(self):
