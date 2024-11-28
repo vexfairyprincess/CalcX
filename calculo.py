@@ -88,6 +88,12 @@ class VentanaCalculoBase(QMainWindow):
         expr_latex = expr_latex.replace(r'\log', r'\ln').replace(r'\\log_([a-zA-Z0-9]+)', r'\\log_{\1}')
         return expr_latex
 
+    def regresar_menu_calculo(self):
+        from menu import MenuCalculo
+        self.menu_calculo = MenuCalculo()
+        self.menu_calculo.show()
+        self.close()
+
 class VentanaCalculadoraIntegrales(VentanaCalculoBase):
     def __init__(self, tamano_fuente):
         super().__init__(tamano_fuente)
@@ -122,6 +128,10 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         self.result_view = QWebEngineView(self)
         self.result_view.setFixedHeight(200)
         self.control_layout.addWidget(self.result_view)
+
+        self.back_to_calculo_menu_button = QPushButton("Regresar al Menú de Cálculo")
+        self.back_to_calculo_menu_button.clicked.connect(self.regresar_menu_calculo)
+        self.control_layout.addWidget(self.back_to_calculo_menu_button)
 
     def update_rendered_function(self):
         func_text = self.input_function.text()
