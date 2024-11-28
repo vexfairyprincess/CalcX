@@ -139,6 +139,7 @@ class VentanaEscalonado(QWidget):
         self.resultado_pasos = ""
         self.resultado_final = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -337,6 +338,7 @@ class VentanaOperacionesCombinadas(QWidget):
         self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout_resultados.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -577,6 +579,7 @@ class VentanaProductoVectorial(QWidget):
         self.area_resultados.setFixedHeight(250)
         self.area_resultados.setReadOnly(True)
         self.layout_resultados.addWidget(self.area_resultados)
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -753,6 +756,7 @@ class VentanaProductoMatrizVector(QWidget):
         self.boton_regresar = QPushButton("Regresar al Menú Principal", self)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -998,6 +1002,7 @@ class VentanaSumaMatrices(QWidget):
         self.resultado_pasos = ""
         self.resultado_final = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -1185,6 +1190,7 @@ class VentanaTranspuesta(QWidget):
         self.boton_regresar.setFixedWidth(250)
         self.boton_regresar.clicked.connect(self.regresar_menu_principal)
         self.layout.addWidget(self.boton_regresar, alignment=Qt.AlignCenter)
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -1329,6 +1335,7 @@ class VentanaMultiplicacionMatrices(QWidget):
         self.resultado_pasos = ""
         self.resultado_final = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         """Actualiza el estilo y tamaño de fuente localmente."""
@@ -1560,6 +1567,7 @@ class VentanaDeterminante(QWidget):
         self.resultado_final = ""
         self.resultado_pasos = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         self.setStyleSheet(f"""
@@ -1697,6 +1705,7 @@ class VentanaInversa(QWidget):
         self.resultado_final = ""
         self.resultado_pasos = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         self.setStyleSheet(f"""
@@ -1829,6 +1838,7 @@ class VentanaCramer(QWidget):
         self.resultado_pasos = ""
         self.resultado_final = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def actualizar_fuente_local(self, tamano):
         self.setStyleSheet(f"""
@@ -1980,6 +1990,7 @@ class VentanaLU(QWidget):
         self.resultado_final = ""
         self.resultado_pasos = ""
         self.modo_paso_a_paso = False
+        self.showMaximized()
 
     def crear_matriz_vector(self):
         try:
