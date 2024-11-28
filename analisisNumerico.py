@@ -63,12 +63,14 @@ class AnimationThread(QThread):
             self.finished.emit(f"Error: {e}")
 
 class VentanaMetodoBase(QMainWindow):
-    def __init__(self):
+    def __init__(self, tamano_fuente):
         super().__init__()
+        self.tamano_fuente = tamano_fuente
         self.setGeometry(100, 100, 1400, 800)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QHBoxLayout(self.central_widget)
+        self.actualizar_fuente_local(self.tamano_fuente)
 
         # Layout para los controles (lado izquierdo)
         self.control_layout = QVBoxLayout()
@@ -85,6 +87,7 @@ class VentanaMetodoBase(QMainWindow):
         # Barra de herramientas para la gráfica
         self.toolbar = NavigationToolbar(self.canvas, self)
         self.plot_layout.addWidget(self.toolbar)
+        self.showMaximized()
 
     def regresar_menu_analisis_numerico(self):
         from menu import MenuAnalisisNumerico
@@ -99,7 +102,7 @@ class VentanaMetodoBase(QMainWindow):
         row1_layout = QHBoxLayout()
         row1_buttons = [
             ('+', '+'), ('-', '-'), ('x', '*'), ('÷', '/'),
-            ('^', '**'), ('√', 'sqrt('), ('ln', 'ln(')
+            ('xˣ', '**'), ('√', 'sqrt('), ('ln', 'ln(')
         ]
         for label, value in row1_buttons:
             button = QPushButton(label)
@@ -146,6 +149,20 @@ class VentanaMetodoBase(QMainWindow):
             self.input_function.setText(current_text + text)
 
         self.input_function.setFocus()
+
+    def actualizar_fuente_local(self, tamano):
+        self.setStyleSheet(f"""
+            QPushButton {{
+                font-size: {tamano}px;
+                padding: 10px;
+            }}
+            QLabel {{
+                font-size: {tamano + 2}px;
+            }}
+            QLineEdit, QTextEdit, QTableWidget {{
+                font-size: {tamano}px;
+            }}
+        """)
 
     def load_mathjax(self):
         mathjax_html = r"""
@@ -249,8 +266,8 @@ class VentanaMetodoBase(QMainWindow):
         self.video_window.show()
 
 class VentanaMetodoBiseccion(VentanaMetodoBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tamano_fuente):
+        super().__init__(tamano_fuente)
         self.setWindowTitle("Método de Bisección - Análisis Numérico")
         self.initUI()
 
@@ -507,8 +524,8 @@ class BisectionAnimation(Scene):
             self.play(FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c))
 
 class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tamano_fuente):
+        super().__init__(tamano_fuente)
         self.setWindowTitle("Método de Newton-Raphson - Análisis Numérico")
         self.initUI()
 
@@ -801,8 +818,8 @@ class NewtonRaphsonAnimation(Scene):
             self.play(FadeOut(tangent_graph), FadeOut(dot))
 
 class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tamano_fuente):
+        super().__init__(tamano_fuente)
         self.InitUI()
 
     def InitUI(self):
@@ -1100,8 +1117,8 @@ class FalsePositionAnimation(Scene):
             self.play(FadeOut(secant_line), FadeOut(dot_xr))
 
 class VentanaMetodoSecante(VentanaMetodoBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tamano_fuente):
+        super().__init__(tamano_fuente)
         self.setWindowTitle("Método de la Secante - Análisis Numérico")
         self.initUI()
 
