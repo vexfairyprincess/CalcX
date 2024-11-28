@@ -13,6 +13,7 @@ from PyQt5.QtGui import QFont, QPixmap
 import sys
 from ventanasMenu import *
 from analisisNumerico import *
+from calculo import *
 
 class MenuPrincipal(QMainWindow):
     def __init__(self):
@@ -33,22 +34,29 @@ class MenuPrincipal(QMainWindow):
         # Buttons for Algebra and Analysis
         self.boton_algebra_lineal = QPushButton("Álgebra Lineal")
         self.boton_algebra_lineal.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_algebra_lineal.setFixedSize(400,50)
+        self.boton_algebra_lineal.setFixedSize(550,50)
         self.boton_algebra_lineal.clicked.connect(self.abrir_menu_algebra_lineal)
         self.layout.addWidget(self.boton_algebra_lineal, 1, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
 
         self.boton_analisis_numerico = QPushButton("Análisis Numérico")
         self.boton_analisis_numerico.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_analisis_numerico.setFixedSize(400,50)  # Medium-sized button
+        self.boton_analisis_numerico.setFixedSize(550,50)  # Medium-sized button
         self.boton_analisis_numerico.clicked.connect(self.abrir_menu_analisis_numerico)
         self.layout.addWidget(self.boton_analisis_numerico, 2, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
+
+        self.boton_calculo = QPushButton("Cálculo (BETA)")
+        self.boton_calculo.setFont(QFont('Arial', 12))  # Set font size
+        self.boton_calculo.setFixedSize(550, 50)  # Medium-sized button
+        self.boton_calculo.clicked.connect(self.abrir_menu_calculo)
+        self.layout.addWidget(self.boton_calculo, 3, 0, 1, 3, Qt.AlignCenter)
 
         # Button to exit application
         self.boton_salir = QPushButton("Salir")
         self.boton_salir.setFont(QFont('Arial', 12))
         self.boton_salir.setFixedSize(150,30)
         self.boton_salir.clicked.connect(self.close)
-        self.layout.addWidget(self.boton_salir, 3, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)  # Bottom left
+        self.layout.addWidget(self.boton_salir, 4, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)  # Bottom left
+        self.showMaximized()
 
 
     def abrir_menu_algebra_lineal(self):
@@ -60,6 +68,11 @@ class MenuPrincipal(QMainWindow):
     def abrir_menu_analisis_numerico(self):
         self.menu_analisis_numerico = MenuAnalisisNumerico()
         self.menu_analisis_numerico.show()
+        self.close()
+
+    def abrir_menu_calculo(self):
+        self.menu_calculo = MenuCalculo()
+        self.menu_calculo.show()
         self.close()
 
 
@@ -86,6 +99,7 @@ class MenuAlgebra(QMainWindow):
 
         # Menú principal
         self.crear_menu_principal()
+        self.showMaximized()
 
     def crear_menu_principal(self):
         # Limpiar el layout actual
@@ -227,13 +241,14 @@ class MenuMatrices(QMainWindow):
         self.label_titulo = QLabel("Operaciones con Matrices", self)
         self.label_titulo.setAlignment(Qt.AlignCenter)
         fuente_titulo = QFont()
-        fuente_titulo.setPointSize(28)
+        fuente_titulo.setPointSize(30)
         fuente_titulo.setBold(True)
         self.label_titulo.setFont(fuente_titulo)
         self.layout.addWidget(self.label_titulo, 0, 0, 1, 3)
 
         # Grupo Reducción de Matrices
         self.group_reduccion = QGroupBox("Reducción de Matrices")
+        self.group_reduccion.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.group_reduccion, 1, 0, 1, 3)
         reduccion_layout = QGridLayout()  # Usamos QGridLayout dentro del grupo
         self.group_reduccion.setLayout(reduccion_layout)
@@ -293,6 +308,7 @@ class MenuMatrices(QMainWindow):
         self.boton_regresar.clicked.connect(self.close)
         # Agregar el botón al layout principal en la última fila, columna 0, alineado abajo a la izquierda
         self.layout.addWidget(self.boton_regresar, 8, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.showMaximized()
 
     def abrir_metodo_escalonado(self):
         self.ventana_escalonado = VentanaEscalonado(self.tamano_fuente)
@@ -416,6 +432,7 @@ class MenuVectores(QMainWindow):
 
         # Actualizar el estilo inicialmente
         self.actualizar_fuente_local(self.tamano_fuente)
+        self.showMaximized()
 
     def abrir_producto_matriz_vector(self):
         self.ventana_producto_matriz_vector = VentanaProductoMatrizVector(self.tamano_fuente)
@@ -530,6 +547,7 @@ class MenuAnalisisNumerico(QMainWindow):
 
         # Update the style
         self.actualizar_fuente_local(self.tamano_fuente)
+        self.showMaximized()
 
     def regresar_menu_principal(self):
         # Abre el menú principal inicial y cierra el actual
@@ -539,25 +557,25 @@ class MenuAnalisisNumerico(QMainWindow):
 
     def abrir_metodo_biseccion(self):
         # Abre la ventana del método de bisección
-        self.ventana_biseccion = VentanaMetodoBiseccion()
+        self.ventana_biseccion = VentanaMetodoBiseccion(self.tamano_fuente)
         self.ventana_biseccion.show()
         self.close()
 
     def abrir_metodo_newton_raphson(self):
         # Abre la ventana del método de Newton-Raphson
-        self.ventana_newton_raphson = VentanaMetodoNewtonRaphson()
+        self.ventana_newton_raphson = VentanaMetodoNewtonRaphson(self.tamano_fuente)
         self.ventana_newton_raphson.show()
         self.close()
     
     def abrir_metodo_falsa_posicion(self):
         # Abre la ventana del método de falsa posición
-        self.ventana_falsa_posicion = VentanaMetodoFalsaPosicion()
+        self.ventana_falsa_posicion = VentanaMetodoFalsaPosicion(self.tamano_fuente)
         self.ventana_falsa_posicion.show()
         self.close()
         
     def abrir_metodo_secante(self):
         # Abre la ventana del método de la secante
-        self.ventana_secante = VentanaMetodoSecante()
+        self.ventana_secante = VentanaMetodoSecante(self.tamano_fuente)
         self.ventana_secante.show()
         self.close()
 
@@ -583,6 +601,101 @@ class MenuAnalisisNumerico(QMainWindow):
                 font-size: {tamano}px;
             }}
         """)
+
+class MenuCalculo(QMainWindow):
+    cambiar_fuente_signal = pyqtSignal(int)  # Signal to change the global font size
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Menú Cálculo")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.tamano_fuente = 17  # Initial font size
+
+        # Connect the signal to change the font
+        self.cambiar_fuente_signal.connect(self.actualizar_fuente_local)
+
+        # Main widget and layout
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.layout = QGridLayout()
+        self.main_widget.setLayout(self.layout)
+
+        # Configure column stretches to center elements
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 2)
+        self.layout.setColumnStretch(2, 1)
+
+        # Title
+        self.label_titulo = QLabel("Cálculo", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        fuente_titulo = QFont()
+        fuente_titulo.setPointSize(28)
+        fuente_titulo.setBold(True)  # Only the main title is bold
+        self.label_titulo.setFont(fuente_titulo)
+        self.layout.addWidget(self.label_titulo, 0, 0, 1, 3)
+
+        self.boton_integrales = QPushButton("Integrales", self)
+        self.boton_integrales.setFixedSize(400, 50)
+        self.boton_integrales.clicked.connect(self.abrir_integrales)
+        self.layout.addWidget(self.boton_integrales, 1, 1, alignment=Qt.AlignCenter)
+
+        botones_fuente_layout = QHBoxLayout()
+        self.layout.addLayout(botones_fuente_layout, 6, 1, alignment=Qt.AlignCenter)
+
+        self.boton_aumentar_fuente = QPushButton("Aumentar tamaño de fuente", self)
+        self.boton_aumentar_fuente.clicked.connect(self.aumentar_tamano_fuente)
+        botones_fuente_layout.addWidget(self.boton_aumentar_fuente)
+
+        self.boton_disminuir_fuente = QPushButton("Disminuir tamaño de fuente", self)
+        self.boton_disminuir_fuente.clicked.connect(self.disminuir_tamano_fuente)
+        botones_fuente_layout.addWidget(self.boton_disminuir_fuente)
+
+        # Back Button
+        self.boton_regresar = QPushButton("Regresar", self)
+        self.boton_regresar.setFixedSize(150, 40)
+        self.boton_regresar.clicked.connect(self.regresar_menu_principal)
+        self.layout.addWidget(self.boton_regresar, 6, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
+
+        # Update the style
+        self.actualizar_fuente_local(self.tamano_fuente)
+        self.showMaximized()
+
+    def regresar_menu_principal(self):
+        # Abre el menú principal inicial y cierra el actual
+        self.menu_principal = MenuPrincipal()
+        self.menu_principal.show()
+        self.close()
+
+    def abrir_integrales(self):
+        self.ventana_integrales = VentanaCalculadoraIntegrales(self.tamano_fuente)
+        self.ventana_integrales.show()
+        self.close()
+
+
+    def aumentar_tamano_fuente(self):
+        self.tamano_fuente += 2
+        self.cambiar_fuente_signal.emit(self.tamano_fuente)
+
+    def disminuir_tamano_fuente(self):
+        if self.tamano_fuente > 8:
+            self.tamano_fuente -= 2
+            self.cambiar_fuente_signal.emit(self.tamano_fuente)
+
+    def actualizar_fuente_local(self, tamano):
+        self.setStyleSheet(f"""
+                QPushButton {{
+                    font-size: {tamano}px;
+                    padding: 10px;
+                }}
+                QLabel {{
+                    font-size: {tamano + 2}px;
+                }}
+                QLineEdit, QTextEdit, QTableWidget {{
+                    font-size: {tamano}px;
+                }}
+            """)
+
 
 
 def iniciar_menu():
