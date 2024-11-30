@@ -4,7 +4,7 @@ import sys
 import os
 import re
 import numpy as np
-from sympy import symbols, sympify, lambdify, latex, diff, S, solveset, Interval, Union, FiniteSet, EmptySet
+from sympy import symbols, sympify, lambdify, latex, diff, S, solveset, Interval, Union, FiniteSet, EmptySet, oo
 from sympy.calculus.util import continuous_domain
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                             QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog, QTableWidget, QTableWidgetItem)
@@ -40,7 +40,9 @@ class AnimationThread(QThread):
         # Configuración de Manim
         config.output_file = output_file
         config.format = "mp4"
-        config.quality = "high_quality"
+        config.pixel_width = 1920
+        config.pixel_height = 1080
+        config.frame_rate = 30  # Opcional, para controlar los FPS
         config.media_dir = output_dir  # Opcionalmente, establecer media_dir al mismo directorio
         config.disable_caching = True
         config.progress_bar = 'none'
@@ -494,34 +496,78 @@ class BisectionAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_sympy, 'numpy')
 
+        def generar_segmentos_manual(x_min, x_max, num_puntos=500):
+            """Divide el rango en pequeños segmentos y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
+
+            # Detectar discontinuidades por valores indefinidos o extremos
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        # Agregar segmento válido
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                # Agregar el último segmento válido
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        # Crear segmentos válidos para graficar
+        segmentos_validos = generar_segmentos_manual(-10, 10, num_puntos=1000)
+
+        if not segmentos_validos:
+            text = Text("No se puede graficar en este dominio por discontinuidades.", font_size=24)
+            self.add(text)
+            self.wait(2)
+            return
+
         # Crear ejes
         axes = Axes(
-            x_range=[-10, 10, 1],
-            y_range=[-10, 10, 1],
+            x_range=[-10, 10, 2],
+            y_range=[-10, 10, 2],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        self.play(Create(axes))
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Graficar cada segmento
+        for segment in segmentos_validos:
+            x_segment, y_segment = zip(*segment)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph))
+            self.wait(0.5)
 
         # Animar el método de bisección
         for a_i, b_i, c_i in self.steps_list:
-            # Marcar puntos a, b y c
-            dot_a = Dot(axes.coords_to_point(a_i, func(a_i)), color=RED)
-            dot_b = Dot(axes.coords_to_point(b_i, func(b_i)), color=RED)
-            dot_c = Dot(axes.coords_to_point(c_i, func(c_i)), color=GREEN)
+            try:
+                dot_a = Dot(axes.coords_to_point(a_i, func(a_i)), color=RED)
+                dot_b = Dot(axes.coords_to_point(b_i, func(b_i)), color=RED)
+                dot_c = Dot(axes.coords_to_point(c_i, func(c_i)), color=GREEN)
 
-            self.play(FadeIn(dot_a), FadeIn(dot_b), FadeIn(dot_c))
-            self.wait(0.5)
+                self.play(FadeIn(dot_a), FadeIn(dot_b), FadeIn(dot_c))
+                self.wait(0.5)
 
-            # Remover los puntos para la siguiente iteración
-            self.play(FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c))
+                self.play(FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c))
+            except Exception as e:
+                print(f"Error al renderizar punto: {e}")
+                continue
 
 class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -784,38 +830,78 @@ class NewtonRaphsonAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
 
+        def generar_segmentos_manual(x_min, x_max, num_puntos=500):
+            """Divide el rango en pequeños segmentos y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
+
+            # Detectar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10, num_puntos=1000)
+
+        if not segmentos_validos:
+            text = Text("No se puede graficar en este dominio por discontinuidades.", font_size=24)
+            self.add(text)
+            self.wait(2)
+            return
+
         # Crear ejes
         axes = Axes(
-            x_range=[-10, 10, 1],
-            y_range=[-10, 10, 1],
+            x_range=[-10, 10, 2],
+            y_range=[-10, 10, 2],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        self.play(Create(axes))
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Graficar segmentos válidos
+        for segment in segmentos_validos:
+            x_segment, y_segment = zip(*segment)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph))
+            self.wait(0.5)
 
         # Animar el método de Newton-Raphson
         for xi in self.x_values[:-1]:
-            f_xi = func(xi)
-            derivative = diff(self.func_expr, x).subs(x, xi)
-            derivative_func = lambdify(x, derivative, 'numpy')
+            try:
+                f_xi = func(xi)
+                derivative = diff(self.func_expr, x).subs(x, xi)
+                derivative_func = lambdify(x, derivative, 'numpy')
 
-            # Ecuación de la tangente
-            tangent = lambda x_val: derivative_func(xi) * (x_val - xi) + f_xi
-            tangent_graph = axes.plot(tangent, color=ORANGE)
+                tangent = lambda x_val: derivative_func(xi) * (x_val - xi) + f_xi
+                tangent_graph = axes.plot(tangent, color=ORANGE)
+                dot = Dot(axes.coords_to_point(xi, f_xi), color=RED)
 
-            dot = Dot(axes.coords_to_point(xi, f_xi), color=RED)
+                self.play(Create(tangent_graph), FadeIn(dot))
+                self.wait(0.5)
 
-            self.play(Create(tangent_graph), FadeIn(dot))
-            self.wait(0.5)
-
-            self.play(FadeOut(tangent_graph), FadeOut(dot))
+                self.play(FadeOut(tangent_graph), FadeOut(dot))
+            except Exception as e:
+                print(f"Error al renderizar: {e}")
 
 class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -1080,41 +1166,81 @@ class FalsePositionAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
 
+        def generar_segmentos_manual(x_min, x_max, num_puntos=500):
+            """Divide el rango en pequeños segmentos y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
+
+            # Detectar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10, num_puntos=1000)
+
+        if not segmentos_validos:
+            text = Text("No se puede graficar en este dominio por discontinuidades.", font_size=24)
+            self.add(text)
+            self.wait(2)
+            return
+
         # Crear ejes
         axes = Axes(
-            x_range=[-10, 10, 1],
-            y_range=[-10, 10, 1],
+            x_range=[-10, 10, 2],
+            y_range=[-10, 10, 2],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        self.play(Create(axes))
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Graficar segmentos válidos
+        for segment in segmentos_validos:
+            x_segment, y_segment = zip(*segment)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph))
+            self.wait(0.5)
 
         # Animar el método de Falsa Posición
         for xl_i, xu_i, xr_i in self.steps_list:
-            f_xl = func(xl_i)
-            f_xu = func(xu_i)
+            try:
+                f_xl = func(xl_i)
+                f_xu = func(xu_i)
 
-            # Línea entre (xl, f(xl)) y (xu, f(xu))
-            secant_line = axes.plot_line_graph(
-                x_values=[xl_i, xu_i],
-                y_values=[f_xl, f_xu],
-                add_vertex_dots=False,
-                line_color=ORANGE
-            )
+                secant_line = axes.plot_line_graph(
+                    x_values=[xl_i, xu_i],
+                    y_values=[f_xl, f_xu],
+                    add_vertex_dots=False,
+                    line_color=ORANGE,
+                )
+                dot_xr = Dot(axes.coords_to_point(xr_i, func(xr_i)), color=GREEN)
 
-            dot_xr = Dot(axes.coords_to_point(xr_i, func(xr_i)), color=GREEN)
+                self.play(Create(secant_line), FadeIn(dot_xr))
+                self.wait(0.5)
 
-            self.play(Create(secant_line), FadeIn(dot_xr))
-            self.wait(0.5)
-
-            self.play(FadeOut(secant_line), FadeOut(dot_xr))
+                self.play(FadeOut(secant_line), FadeOut(dot_xr))
+            except Exception as e:
+                print(f"Error al renderizar: {e}")
 
 class VentanaMetodoSecante(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -1331,38 +1457,78 @@ class SecantMethodAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
 
+        def generar_segmentos_manual(x_min, x_max, num_puntos=500):
+            """Divide el rango en pequeños segmentos y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
+
+            # Detectar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10, num_puntos=1000)
+
+        if not segmentos_validos:
+            text = Text("No se puede graficar en este dominio por discontinuidades.", font_size=24)
+            self.add(text)
+            self.wait(2)
+            return
+
         # Crear ejes
         axes = Axes(
-            x_range=[-10, 10, 1],
-            y_range=[-10, 10, 1],
+            x_range=[-10, 10, 2],
+            y_range=[-10, 10, 2],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        self.play(Create(axes))
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Graficar segmentos válidos
+        for segment in segmentos_validos:
+            x_segment, y_segment = zip(*segment)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph))
+            self.wait(0.5)
 
         # Animar el método de la Secante
         for i in range(len(self.x_values) - 2):
-            x0, x1 = self.x_values[i], self.x_values[i + 1]
-            fx0, fx1 = func(x0), func(x1)
+            try:
+                x0, x1 = self.x_values[i], self.x_values[i + 1]
+                fx0, fx1 = func(x0), func(x1)
 
-            # Línea secante
-            secant_line = axes.plot_line_graph(
-                x_values=[x0, x1],
-                y_values=[fx0, fx1],
-                add_vertex_dots=False,
-                line_color=ORANGE
-            )
+                secant_line = axes.plot_line_graph(
+                    x_values=[x0, x1],
+                    y_values=[fx0, fx1],
+                    add_vertex_dots=False,
+                    line_color=ORANGE,
+                )
+                dot_x1 = Dot(axes.coords_to_point(x1, fx1), color=RED)
 
-            dot_x1 = Dot(axes.coords_to_point(x1, fx1), color=RED)
+                self.play(Create(secant_line), FadeIn(dot_x1))
+                self.wait(0.5)
 
-            self.play(Create(secant_line), FadeIn(dot_x1))
-            self.wait(0.5)
-
-            self.play(FadeOut(secant_line), FadeOut(dot_x1))
+                self.play(FadeOut(secant_line), FadeOut(dot_x1))
+            except Exception as e:
+                print(f"Error al renderizar: {e}")
