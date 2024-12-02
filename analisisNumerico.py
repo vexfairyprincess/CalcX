@@ -4,7 +4,7 @@ import sys
 import os
 import re
 import numpy as np
-from sympy import symbols, sympify, lambdify, latex, diff, S, solveset, Interval, Union, FiniteSet, EmptySet
+from sympy import symbols, sympify, lambdify, latex, diff, S, solveset, Interval, Union, FiniteSet, EmptySet, oo
 from sympy.calculus.util import continuous_domain
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                             QTextEdit, QDialog, QApplication, QMessageBox, QProgressDialog, QTableWidget, QTableWidgetItem)
@@ -40,7 +40,9 @@ class AnimationThread(QThread):
         # Configuración de Manim
         config.output_file = output_file
         config.format = "mp4"
-        config.quality = "high_quality"
+        config.pixel_width = 1920
+        config.pixel_height = 1080
+        config.frame_rate = 30  # Opcional, para controlar los FPS
         config.media_dir = output_dir  # Opcionalmente, establecer media_dir al mismo directorio
         config.disable_caching = True
         config.progress_bar = 'none'
@@ -494,34 +496,119 @@ class BisectionAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_sympy, 'numpy')
 
-        # Crear ejes
+        # Mostrar el título inicial con LaTeX de la función
+        func_latex = MathTex(f"f(x) = {latex(self.func_sympy)}", font_size=36).to_edge(UP)
+        self.play(Write(func_latex))
+        self.wait(2)
+
+        # Crear ejes con cuadrícula
         axes = Axes(
-            x_range=[-10, 10, 1],
-            y_range=[-10, 10, 1],
+            x_range=[-10, 10, 2],
+            y_range=[-10, 10, 2],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        grid = NumberPlane(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            background_line_style={"stroke_opacity": 0.5},
+        )
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Mostrar ejes y cuadrícula
+        self.play(Create(grid), Create(axes))
 
-        # Animar el método de bisección
-        for a_i, b_i, c_i in self.steps_list:
-            # Marcar puntos a, b y c
-            dot_a = Dot(axes.coords_to_point(a_i, func(a_i)), color=RED)
-            dot_b = Dot(axes.coords_to_point(b_i, func(b_i)), color=RED)
-            dot_c = Dot(axes.coords_to_point(c_i, func(c_i)), color=GREEN)
+        # Generar segmentos de la función y manejar discontinuidades
+        def generar_segmentos_manual(x_min, x_max, num_puntos=500):
+            """Divide el rango en segmentos pequeños y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
 
-            self.play(FadeIn(dot_a), FadeIn(dot_b), FadeIn(dot_c))
-            self.wait(0.5)
+            # Filtrar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
 
-            # Remover los puntos para la siguiente iteración
-            self.play(FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c))
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10, num_puntos=1000)
+
+        # Graficar segmentos válidos
+        for segmento in segmentos_validos:
+            x_segment, y_segment = zip(*segmento)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph), run_time=1)
+
+        # Animar el proceso del método de bisección
+        for idx, (a_i, b_i, c_i) in enumerate(self.steps_list):
+            try:
+                # Crear puntos en el intervalo y en la raíz aproximada
+                dot_a = Dot(axes.coords_to_point(a_i, func(a_i)), color=RED)
+                dot_b = Dot(axes.coords_to_point(b_i, func(b_i)), color=RED)
+                dot_c = Dot(axes.coords_to_point(c_i, func(c_i)), color=GREEN)
+
+                # Mostrar etiquetas con coordenadas de puntos
+                label_a = MathTex(f"a_{idx+1} = {a_i:.2f}", font_size=24).next_to(dot_a, DOWN)
+                label_b = MathTex(f"b_{idx+1} = {b_i:.2f}", font_size=24).next_to(dot_b, DOWN)
+                label_c = MathTex(f"c_{idx+1} = {c_i:.2f}", font_size=24).next_to(dot_c, UP)
+
+                # Mostrar puntos y etiquetas
+                self.play(
+                    FadeIn(dot_a), FadeIn(dot_b), FadeIn(dot_c),
+                    Write(label_a), Write(label_b), Write(label_c),
+                    run_time=1.5
+                )
+
+                # Mostrar líneas verticales en los puntos del intervalo
+                line_a = axes.get_vertical_line(axes.coords_to_point(a_i, func(a_i)), color=RED, stroke_width=2)
+                line_b = axes.get_vertical_line(axes.coords_to_point(b_i, func(b_i)), color=RED, stroke_width=2)
+                line_c = axes.get_vertical_line(axes.coords_to_point(c_i, func(c_i)), color=GREEN, stroke_width=2)
+
+                self.play(Create(line_a), Create(line_b), Create(line_c), run_time=1)
+
+                # Si es la última iteración, hacer zoom en la raíz aproximada
+                if idx == len(self.steps_list) - 1:
+                    self.play(
+                        axes.animate.set_x_range(c_i - 1, c_i + 1),
+                        axes.animate.set_y_range(func(c_i) - 1, func(c_i) + 1),
+                        run_time=2,
+                    )
+
+                # Quitar puntos y etiquetas (para dejar espacio para la siguiente iteración)
+                self.play(
+                    FadeOut(dot_a), FadeOut(dot_b), FadeOut(dot_c),
+                    FadeOut(label_a), FadeOut(label_b), FadeOut(label_c),
+                    FadeOut(line_a), FadeOut(line_b), FadeOut(line_c),
+                    run_time=1,
+                )
+            except Exception as e:
+                print(f"Error al procesar iteración {idx}: {e}")
+                continue
+
+        # Mostrar la raíz aproximada al final
+        raiz_aproximada = self.steps_list[-1][2]
+        root_text = MathTex(f"\\text{{Raíz aproximada: }} x \\approx {raiz_aproximada:.4f}", color=YELLOW, font_size=36)
+        root_text.to_edge(DOWN)
+        self.play(Write(root_text))
+        self.wait(3)
 
 class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -763,7 +850,7 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
         progress_dialog.show()
 
         # Crear y ejecutar el hilo de animación
-        self.animation_thread = AnimationThread('newton', self.func_expr, self.x_values)
+        self.animation_thread = AnimationThread('newton', self.func_expr, self.steps_list)
         self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
         self.animation_thread.start()
 
@@ -775,47 +862,130 @@ class VentanaMetodoNewtonRaphson(VentanaMetodoBase):
             self.play_animation(video_path)
 
 class NewtonRaphsonAnimation(Scene):
-    def __init__(self, func_expr, x_values, **kwargs):
+    def __init__(self, func_expr, steps_list, **kwargs):
         super().__init__(**kwargs)
         self.func_expr = func_expr
-        self.x_values = x_values
+        self.steps_list = steps_list
 
     def construct(self):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
+        derivative_func = lambdify(x, diff(self.func_expr, x), 'numpy')
 
-        # Crear ejes
+        # Mostrar el título inicial con LaTeX de la función
+        func_latex = MathTex(f"f(x) = {latex(self.func_expr)}", font_size=36).to_edge(UP)
+        self.play(Write(func_latex))
+        self.wait(2)
+
+        # Crear ejes con cuadrícula
         axes = Axes(
             x_range=[-10, 10, 1],
             y_range=[-10, 10, 1],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        grid = NumberPlane(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            background_line_style={"stroke_opacity": 0.5},
+        )
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Mostrar ejes y cuadrícula
+        self.play(Create(grid), Create(axes))
 
-        # Animar el método de Newton-Raphson
-        for xi in self.x_values[:-1]:
-            f_xi = func(xi)
-            derivative = diff(self.func_expr, x).subs(x, xi)
-            derivative_func = lambdify(x, derivative, 'numpy')
+        # Generar segmentos de la función y manejar discontinuidades
+        def generar_segmentos_manual(x_min, x_max, num_puntos=1000):
+            """Divide el rango en segmentos pequeños y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
 
-            # Ecuación de la tangente
-            tangent = lambda x_val: derivative_func(xi) * (x_val - xi) + f_xi
-            tangent_graph = axes.plot(tangent, color=ORANGE)
+            # Filtrar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
 
-            dot = Dot(axes.coords_to_point(xi, f_xi), color=RED)
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
 
-            self.play(Create(tangent_graph), FadeIn(dot))
-            self.wait(0.5)
+            return segmentos
 
-            self.play(FadeOut(tangent_graph), FadeOut(dot))
+        segmentos_validos = generar_segmentos_manual(-10, 10)
+
+        # Graficar segmentos válidos
+        for segmento in segmentos_validos:
+            x_segment, y_segment = zip(*segmento)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph), run_time=1)
+
+        # Animar el proceso del método de Newton-Raphson
+        for idx, (iter_num, x_i, f_xi, f_prime_xi, x_next, error_abs, error_rel) in enumerate(self.steps_list):
+            try:
+                # Verificar que los valores sean finitos
+                if not np.isfinite(x_i) or not np.isfinite(func(x_i)) or not np.isfinite(f_prime_xi):
+                    continue  # Saltar esta iteración si hay valores no finitos
+
+                # Punto actual
+                dot_xi = Dot(axes.coords_to_point(x_i, func(x_i)), color=RED)
+
+                # Tangente en x_i
+                derivative = f_prime_xi
+                tangent_line = lambda t: derivative * (t - x_i) + func(x_i)
+                x_tangent_min = x_i - 5
+                x_tangent_max = x_i + 5
+                tangent_graph = axes.plot(
+                    tangent_line,
+                    x_range=[x_tangent_min, x_tangent_max],
+                    color=ORANGE
+                )
+
+                # Mostrar punto y tangente
+                self.play(FadeIn(dot_xi), Create(tangent_graph), run_time=1.5)
+                self.wait(1)
+
+                # Nuevo punto x_{i+1} en el eje x
+                if np.isfinite(x_next):
+                    dot_x_next = Dot(axes.coords_to_point(x_next, 0), color=GREEN)
+                    self.play(FadeIn(dot_x_next))
+                    self.wait(1)
+                    # Línea vertical desde x_next a la curva
+                    line_to_curve = DashedLine(
+                        start=axes.coords_to_point(x_next, 0),
+                        end=axes.coords_to_point(x_next, func(x_next)),
+                        color=YELLOW
+                    )
+                    self.play(Create(line_to_curve))
+                    self.wait(1)
+                else:
+                    continue  # Saltar si x_next no es finito
+
+                # Actualizar para la siguiente iteración
+                self.play(FadeOut(dot_xi), FadeOut(tangent_graph), FadeOut(dot_x_next), FadeOut(line_to_curve))
+            except Exception as e:
+                print(f"Error al procesar iteración {idx}: {e}")
+                continue
+
+        # Mostrar la raíz aproximada al final
+        raiz_aproximada = self.steps_list[-1][4]  # x_{i+1} de la última iteración
+        root_text = MathTex(f"\\text{{Raíz aproximada: }} x \\approx {raiz_aproximada:.4f}", color=YELLOW, font_size=36)
+        root_text.to_edge(DOWN)
+        self.play(Write(root_text))
+        self.wait(3)
 
 class VentanaMetodoFalsaPosicion(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -1080,41 +1250,107 @@ class FalsePositionAnimation(Scene):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
 
-        # Crear ejes
+        # Mostrar el título inicial con LaTeX de la función
+        func_latex = MathTex(f"f(x) = {latex(self.func_expr)}", font_size=36).to_edge(UP)
+        self.play(Write(func_latex))
+        self.wait(2)
+
+        # Crear ejes con cuadrícula
         axes = Axes(
             x_range=[-10, 10, 1],
             y_range=[-10, 10, 1],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        grid = NumberPlane(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            background_line_style={"stroke_opacity": 0.5},
+        )
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Mostrar ejes y cuadrícula
+        self.play(Create(grid), Create(axes))
 
-        # Animar el método de Falsa Posición
-        for xl_i, xu_i, xr_i in self.steps_list:
-            f_xl = func(xl_i)
-            f_xu = func(xu_i)
+        # Generar segmentos de la función y manejar discontinuidades
+        def generar_segmentos_manual(x_min, x_max, num_puntos=1000):
+            """Divide el rango en segmentos pequeños y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
 
-            # Línea entre (xl, f(xl)) y (xu, f(xu))
-            secant_line = axes.plot_line_graph(
-                x_values=[xl_i, xu_i],
-                y_values=[f_xl, f_xu],
+            # Filtrar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10)
+
+        # Graficar segmentos válidos
+        for segmento in segmentos_validos:
+            x_segment, y_segment = zip(*segmento)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
                 add_vertex_dots=False,
-                line_color=ORANGE
+                line_color=BLUE,
             )
+            self.play(Create(graph), run_time=1)
 
-            dot_xr = Dot(axes.coords_to_point(xr_i, func(xr_i)), color=GREEN)
+        # Animar el proceso del método de Falsa Posición
+        for idx, (xl_i, xu_i, xr_i, error_relativo) in enumerate(self.steps_list):
+            try:
+                # Verificar que los valores de la función sean finitos
+                if not np.isfinite(func(xl_i)) or not np.isfinite(func(xu_i)) or not np.isfinite(func(xr_i)):
+                    continue  # Saltar esta iteración si hay valores no finitos
 
-            self.play(Create(secant_line), FadeIn(dot_xr))
-            self.wait(0.5)
+                # Puntos xl, xu y xr
+                dot_xl = Dot(axes.coords_to_point(xl_i, func(xl_i)), color=RED)
+                dot_xu = Dot(axes.coords_to_point(xu_i, func(xu_i)), color=RED)
+                dot_xr = Dot(axes.coords_to_point(xr_i, func(xr_i)), color=GREEN)
 
-            self.play(FadeOut(secant_line), FadeOut(dot_xr))
+                # Línea secante entre xl y xu
+                secant_line = axes.plot_line_graph(
+                    x_values=[xl_i, xu_i],
+                    y_values=[func(xl_i), func(xu_i)],
+                    add_vertex_dots=False,
+                    line_color=ORANGE,
+                )
+
+                # Mostrar puntos y línea
+                self.play(
+                    FadeIn(dot_xl), FadeIn(dot_xu), FadeIn(dot_xr),
+                    Create(secant_line),
+                    run_time=1.5
+                )
+                self.wait(1)
+
+                # Actualizar para la siguiente iteración
+                self.play(FadeOut(dot_xl), FadeOut(dot_xu), FadeOut(dot_xr), FadeOut(secant_line))
+            except Exception as e:
+                print(f"Error al procesar iteración {idx}: {e}")
+                continue
+
+        # Mostrar la raíz aproximada al final
+        raiz_aproximada = self.steps_list[-1][2]  # xr de la última iteración
+        root_text = MathTex(f"\\text{{Raíz aproximada: }} x \\approx {raiz_aproximada:.4f}", color=YELLOW, font_size=36)
+        root_text.to_edge(DOWN)
+        self.play(Write(root_text))
+        self.wait(3)
 
 class VentanaMetodoSecante(VentanaMetodoBase):
     def __init__(self, tamano_fuente):
@@ -1181,7 +1417,6 @@ class VentanaMetodoSecante(VentanaMetodoBase):
             max_iter = 100
             self.x_values = [x0, x1]
             self.steps_list = []
-            results = []
             for i in range(max_iter):
                 fx0 = funcion(x0)
                 fx1 = funcion(x1)
@@ -1195,19 +1430,13 @@ class VentanaMetodoSecante(VentanaMetodoBase):
                 error_rel = abs(error_abs / x2) * 100 if x2 != 0 else float('inf')
                 self.steps_list.append((i + 1, x0, x1, x2, fx0, fx1, error_abs, error_rel))
 
-                # Verificar convergencia
-                if error_abs < tol:
-                    self.result_area.setText(f"Raíz aproximada: {x2}\nError absoluto: {error_abs}\nError relativo: {error_rel}%\nNúmero de iteraciones: {i + 1}")
-                    self.x_values.append(x2)
-                    self.plot_function(self.func_expr, self.x_values)
-                    self.animation_button.setEnabled(True)
-                    self.show_steps_button.setEnabled(True)
-                    return
-
                 x0, x1 = x1, x2
                 self.x_values.append(x1)
 
-            self.result_area.setText("No converge en el número máximo de iteraciones")
+                # Verificar convergencia
+                if error_abs < tol:
+                    break
+            self.result_area.setText(f"Raíz aproximada: {x2}\nError absoluto: {error_abs}\nError relativo: {error_rel}%\nNúmero de iteraciones: {i + 1}")
             self.plot_function(self.func_expr, self.x_values)
             self.animation_button.setEnabled(True)
             self.show_steps_button.setEnabled(True)
@@ -1227,14 +1456,17 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         ax.axvline(0, color='black', linewidth=0.5)
 
         # Dibujar líneas secantes
-        for i in range(len(x_values) - 2):
+        for i in range(len(x_values) - 1):
             x0, x1 = x_values[i], x_values[i + 1]
             fx0, fx1 = funcion(x0), funcion(x1)
-            ax.plot([x0, x1], [fx0, fx1], 'r--', label=f'Secante {i + 1}' if i == 0 else "")
+            if np.isfinite(fx0) and np.isfinite(fx1):
+                ax.plot([x0, x1], [fx0, fx1], 'r--', label=f'Secante {i + 1}' if i == 0 else "")
 
         # Marcar los puntos x_i
         for xi in x_values:
-            ax.plot(xi, funcion(xi), 'ro')
+            yi = funcion(xi)
+            if np.isfinite(yi):
+                ax.plot(xi, yi, 'ro')
 
         ax.set_xlim(-10, 10)
         ax.set_ylim(-10, 10)
@@ -1310,7 +1542,7 @@ class VentanaMetodoSecante(VentanaMetodoBase):
         progress_dialog.show()
 
         # Crear y ejecutar el hilo de animación
-        self.animation_thread = AnimationThread('secant', self.func_expr, self.x_values)
+        self.animation_thread = AnimationThread('secant', self.func_expr, self.steps_list)
         self.animation_thread.finished.connect(lambda video_path: self.on_animation_finished(video_path, progress_dialog))
         self.animation_thread.start()
 
@@ -1322,47 +1554,126 @@ class VentanaMetodoSecante(VentanaMetodoBase):
             self.play_animation(video_path)
 
 class SecantMethodAnimation(Scene):
-    def __init__(self, func_expr, x_values, **kwargs):
+    def __init__(self, func_expr, steps_list, **kwargs):
         super().__init__(**kwargs)
         self.func_expr = func_expr
-        self.x_values = x_values
+        self.steps_list = steps_list
 
     def construct(self):
         x = symbols('x')
         func = lambdify(x, self.func_expr, 'numpy')
 
-        # Crear ejes
+        # Mostrar el título inicial con LaTeX de la función
+        func_latex = MathTex(f"f(x) = {latex(self.func_expr)}", font_size=36).to_edge(UP)
+        self.play(Write(func_latex))
+        self.wait(2)
+
+        # Crear ejes con cuadrícula
         axes = Axes(
             x_range=[-10, 10, 1],
             y_range=[-10, 10, 1],
             x_length=10,
             y_length=6,
-            tips=False
+            tips=False,
+            x_axis_config={"include_ticks": True},
+            y_axis_config={"include_ticks": True},
         ).add_coordinates()
 
-        # Graficar la función
-        graph = axes.plot(lambda x: func(x), color=BLUE)
+        grid = NumberPlane(
+            x_range=[-10, 10, 1],
+            y_range=[-10, 10, 1],
+            background_line_style={"stroke_opacity": 0.5},
+        )
 
-        # Animar la gráfica
-        self.play(Create(axes), Create(graph))
-        self.wait(1)
+        # Mostrar ejes y cuadrícula
+        self.play(Create(grid), Create(axes))
+
+        # Generar segmentos de la función y manejar discontinuidades
+        def generar_segmentos_manual(x_min, x_max, num_puntos=1000):
+            """Divide el rango en segmentos pequeños y filtra discontinuidades."""
+            x_vals = np.linspace(x_min, x_max, num_puntos)
+            y_vals = func(x_vals)
+
+            # Filtrar discontinuidades
+            valid_mask = np.isfinite(y_vals) & (np.abs(y_vals) < 1e6)
+            segmentos = []
+            current_segment = []
+
+            for i, valid in enumerate(valid_mask):
+                if valid:
+                    current_segment.append((x_vals[i], y_vals[i]))
+                else:
+                    if current_segment:
+                        segmentos.append(current_segment)
+                        current_segment = []
+            if current_segment:
+                segmentos.append(current_segment)
+
+            return segmentos
+
+        segmentos_validos = generar_segmentos_manual(-10, 10)
+
+        # Graficar segmentos válidos
+        for segmento in segmentos_validos:
+            x_segment, y_segment = zip(*segmento)
+            graph = axes.plot_line_graph(
+                x_values=x_segment,
+                y_values=y_segment,
+                add_vertex_dots=False,
+                line_color=BLUE,
+            )
+            self.play(Create(graph), run_time=1)
 
         # Animar el método de la Secante
-        for i in range(len(self.x_values) - 2):
-            x0, x1 = self.x_values[i], self.x_values[i + 1]
-            fx0, fx1 = func(x0), func(x1)
+        for i, (iter_num, x_prev, x_curr, x_next, f_x_prev, f_x_curr, error_abs, error_rel) in enumerate(self.steps_list):
+            try:
+                # Verificar que los valores de la función sean finitos
+                if not np.isfinite(f_x_prev) or not np.isfinite(f_x_curr):
+                    continue  # Saltar si algún valor no es finito
 
-            # Línea secante
-            secant_line = axes.plot_line_graph(
-                x_values=[x0, x1],
-                y_values=[fx0, fx1],
-                add_vertex_dots=False,
-                line_color=ORANGE
-            )
+                # Línea secante entre x_prev y x_curr
+                secant_line = axes.plot_line_graph(
+                    x_values=[x_prev, x_curr],
+                    y_values=[f_x_prev, f_x_curr],
+                    add_vertex_dots=False,
+                    line_color=ORANGE,
+                )
 
-            dot_x1 = Dot(axes.coords_to_point(x1, fx1), color=RED)
+                # Puntos en x_prev, x_curr y x_next
+                dot_x_prev = Dot(axes.coords_to_point(x_prev, f_x_prev), color=RED)
+                dot_x_curr = Dot(axes.coords_to_point(x_curr, f_x_curr), color=RED)
+                dot_x_next = Dot(axes.coords_to_point(x_next, 0), color=GREEN)
 
-            self.play(Create(secant_line), FadeIn(dot_x1))
-            self.wait(0.5)
+                # Mostrar puntos y línea
+                self.play(
+                    FadeIn(dot_x_prev), FadeIn(dot_x_curr),
+                    Create(secant_line),
+                    run_time=1.5
+                )
+                self.wait(1)
 
-            self.play(FadeOut(secant_line), FadeOut(dot_x1))
+                # Línea vertical desde x_next al eje x
+                line_to_x_axis = DashedLine(
+                    start=axes.coords_to_point(x_next, func(x_next)),
+                    end=axes.coords_to_point(x_next, 0),
+                    color=YELLOW
+                )
+
+                self.play(FadeIn(dot_x_next), Create(line_to_x_axis))
+                self.wait(1)
+
+                # Actualizar para la siguiente iteración
+                self.play(FadeOut(dot_x_prev), FadeOut(dot_x_curr), FadeOut(dot_x_next), FadeOut(secant_line), FadeOut(line_to_x_axis))
+            except Exception as e:
+                print(f"Error al procesar iteración {i}: {e}")
+                continue
+
+        # Obtener la raíz aproximada y asegurar que es numérica
+        raiz_aproximada = self.steps_list[-1][3]  # x_i+1 de la última iteración
+        raiz_aproximada = float(raiz_aproximada)
+
+        # Mostrar la raíz aproximada al final
+        root_text = MathTex(f"\\text{{Raíz aproximada: }} x \\approx {raiz_aproximada:.4f}", color=YELLOW, font_size=36)
+        root_text.to_edge(DOWN)
+        self.play(Write(root_text))
+        self.wait(3)
