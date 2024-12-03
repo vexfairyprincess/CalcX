@@ -640,6 +640,11 @@ class MenuCalculo(QMainWindow):
         self.boton_integrales.clicked.connect(self.abrir_integrales)
         self.layout.addWidget(self.boton_integrales, 1, 1, alignment=Qt.AlignCenter)
 
+        self.boton_derivadas = QPushButton("Derivadas", self)
+        self.boton_derivadas.setFixedSize(400, 50)
+        self.boton_derivadas.clicked.connect(self.abrir_derivadas)
+        self.layout.addWidget(self.boton_derivadas, 2, 1, alignment=Qt.AlignCenter)
+
         botones_fuente_layout = QHBoxLayout()
         self.layout.addLayout(botones_fuente_layout, 6, 1, alignment=Qt.AlignCenter)
 
@@ -670,6 +675,11 @@ class MenuCalculo(QMainWindow):
     def abrir_integrales(self):
         self.ventana_integrales = VentanaCalculadoraIntegrales(self.tamano_fuente)
         self.ventana_integrales.show()
+        self.close()
+
+    def abrir_derivadas(self):
+        self.ventana_derivadas = VentanaCalculadoraDerivadas(self.tamano_fuente)
+        self.ventana_derivadas.show()
         self.close()
 
 
