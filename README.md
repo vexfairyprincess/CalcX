@@ -68,10 +68,10 @@ Si deseas contribuir al proyecto, sigue estos pasos:
 
 Este proyecto fue desarrollado por:
 
-- **Silvio Alejandro Mora Mendoza**
 - **Andrés Miguel Martínez Somarriba**
 - **Halley Isela Castro Calero**
 - **Samuel Benjamín Chavarria Baltodano**
+- **Silvio Alejandro Mora Mendoza**
 
 ---
 
