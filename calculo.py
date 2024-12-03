@@ -3,6 +3,7 @@ import os
 import re
 import numpy as np
 from sympy import symbols, sympify, lambdify, latex, integrate
+from sympy import diff
 from sympy.core.sympify import SympifyError
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                              QTextEdit, QDialog, QApplication, QMessageBox, QTableWidget, QTableWidgetItem)
@@ -245,3 +246,110 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
          except Exception as e:
              QMessageBox.warning(self, "Error de Graficación", f"No se pudo graficar la función: {e}")
 
+class VentanaCalculadoraDerivadas(VentanaCalculoBase):
+    def __init__(self, tamano_fuente):
+        super().__init__(tamano_fuente)
+        self.setWindowTitle("Calculadora de Derivadas")
+        self.initUI()
+
+    def initUI(self):
+        self.input_function = QLineEdit()
+        self.input_function.setPlaceholderText("Ingrese la función a derivar en términos de x")
+        self.control_layout.addWidget(self.input_function)
+
+        self.input_function.textChanged.connect(self.update_rendered_function)
+        self.rendered_view = QWebEngineView(self)
+        self.rendered_view.setFixedHeight(150)
+        self.control_layout.addWidget(self.rendered_view)
+
+        self.control_layout.addLayout(self.create_math_keyboard())
+
+        self.calculateDerivada_button = QPushButton("Calcular Derivada")
+        self.calculateDerivada_button.clicked.connect(self.calculate_derivada)
+        self.control_layout.addWidget(self.calculateDerivada_button)  # Corrección aquí
+
+        self.result_view = QWebEngineView(self)
+        self.result_view.setFixedHeight(200)
+        self.control_layout.addWidget(self.result_view)
+
+        self.back_to_calculo_menu_button = QPushButton("Regresar al Menú de Cálculo")
+        self.back_to_calculo_menu_button.clicked.connect(self.regresar_menu_calculo)
+        self.control_layout.addWidget(self.back_to_calculo_menu_button)
+
+    def update_rendered_function(self):
+        func_text = self.input_function.text()
+        func_text_prepared = self.prepare_expression(func_text)
+
+        try:
+            x = symbols('x')
+            expr = sympify(func_text_prepared)
+            self.func_expr = expr
+
+            self.latex_expr = self.custom_latex_rendering(expr)
+            html_content = f"""
+            <html>
+            <head>
+                <script type="text/javascript" async
+                    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js">
+                </script>
+            </head>
+            <body>
+                <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
+                    \\( f(x) = {self.latex_expr} \\)
+                </div>
+            </body>
+            </html>
+            """
+            self.rendered_view.setHtml(html_content)
+        except Exception as e:
+            self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
+
+    def calculate_derivada(self):
+        func_text = self.input_function.text()
+        func_text_prepared = self.prepare_expression(func_text)
+
+        try:
+            x = symbols('x')
+            expr = sympify(func_text_prepared)
+            self.func_expr = expr
+            result = diff(expr, x)  # Usar diff para derivadas
+            latex_result = self.custom_latex_rendering(result)
+
+            html_content = f"""
+            <html>
+            <head>
+                <script type="text/javascript" async
+                    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js">
+                </script>
+            </head>
+            <body>
+                <div style="font-size: 24px; color: black; padding: 20px;">
+                    \\( \\frac{{d}}{{dx}} {self.latex_expr} = {latex_result} \\)
+                </div>
+            </body>
+            </html>
+            """
+            self.result_view.setHtml(html_content)
+
+            self.plot_derivada(expr)
+
+        except SympifyError as e:
+            error_html = f"<p style='color:red;'>Error al interpretar la función: {e}</p>"
+            self.result_view.setHtml(error_html)
+        except Exception as e:
+            error_html = f"<p style='color:red;'>Error al calcular la derivada: {e}</p>"
+            self.result_view.setHtml(error_html)
+
+    def plot_derivada(self, expr):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        x_vals = np.linspace(-10, 10, 400)
+        derivative_expr = diff(expr, symbols('x'))  # Calcular la derivada
+        f = lambdify(symbols('x'), derivative_expr, modules=['numpy'])
+        try:
+            y_vals = f(x_vals)
+            ax.plot(x_vals, y_vals, label="f'(x)")
+            ax.legend()
+            self.canvas.draw()
+        except Exception as e:
+            QMessageBox.warning(self, "Error de Graficación", f"No se pudo graficar la derivada: {e}")
