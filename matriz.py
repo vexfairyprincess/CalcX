@@ -108,12 +108,14 @@ class Matriz:
         pivotes = [-1] * m  # Inicializa los índices de las columnas pivote
         resultado = "Solución del sistema:\n"
         soluciones = {}
+        soluciones_numericas = {}  # Diccionario para almacenar los valores numéricos de las soluciones
         columnas_pivote = []  # Lista para registrar las columnas pivote
 
         # Identifica las columnas pivote
         for j in range(m):
             for i in range(n):
-                if abs(self.matriz[i][j] - 1) < 1e-10 and all(abs(self.matriz[k][j]) < 1e-10 for k in range(n) if k != i):
+                if abs(self.matriz[i][j] - 1) < 1e-10 and all(
+                        abs(self.matriz[k][j]) < 1e-10 for k in range(n) if k != i):
                     pivotes[j] = i
                     columnas_pivote.append(j + 1)  # Almacena la columna con índice 1-based
                     break
@@ -150,16 +152,24 @@ class Matriz:
                             terminos.append(f"{coef_str}x{k + 1}")
                         else:
                             terminos.append(f"+ {coef_str}x{k + 1}")
-                ecuacion = ""
-                if constante_str != "0":
-                    ecuacion += constante_str
-                if terminos:
-                    if ecuacion and ecuacion != "0":
-                        ecuacion += " " + " ".join(terminos)
-                    else:
-                        ecuacion = " ".join(terminos).lstrip("+ ").strip()
+                # Construye la ecuación
+                if constante_str == "0" and not terminos:
+                    ecuacion = "0"
+                else:
+                    ecuacion = ""
+                    if constante_str != "0":
+                        ecuacion += constante_str
+                    if terminos:
+                        if ecuacion and ecuacion != "0":
+                            ecuacion += " " + " ".join(terminos)
+                        else:
+                            ecuacion = " ".join(terminos).lstrip("+ ").strip()
 
                 soluciones[var_name] = f"{var_name} = {ecuacion}".strip()
+
+                # Almacena el valor numérico si no hay variables libres
+                if not terminos:
+                    soluciones_numericas[var_name] = constante
 
         # Compila y muestra las soluciones ordenadas
         for i in range(m):
@@ -173,13 +183,17 @@ class Matriz:
         elif any(pivote == -1 for pivote in pivotes):
             resultado += "\nHay infinitas soluciones debido a variables libres.\n"
         else:
-            resultado += "\nLa solución es única.\n"
+            # Agrega el mensaje de "Solución trivial" si todas las variables son cero
+            if len(soluciones_numericas) == m and all(abs(val) < 1e-10 for val in soluciones_numericas.values()):
+                resultado += "\nSolución trivial.\n"
+            else:
+                resultado += "\nLa solución es única.\n"
 
         # Muestra las columnas pivote
         resultado += f"\nLas columnas pivote son: {', '.join(map(str, columnas_pivote))}.\n"
 
         return resultado
-    
+
     def escalar_por_matriz(self, escalar):
         """Multiplica la matriz actual por un escalar."""
         resultado = []
