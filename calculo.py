@@ -7,13 +7,29 @@ import numpy as np
 from sympy import symbols, sympify, lambdify, latex, integrate, diff
 from sympy.core.sympify import SympifyError
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                             QTextEdit, QDialog, QApplication, QMessageBox, QTableWidget, QTableWidgetItem)
+                             QTextEdit, QDialog, QApplication, QMessageBox)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import Qt, QUrl, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QClipboard
 
-# Importar custom_math desde custom_modules.py
 from custom_modules import custom_math
+
+# Importar Plotly
+import plotly.graph_objects as go
+from plotly.offline import plot
+
+
+class PlotlyViewer(QWebEngineView):
+    def __init__(self, figure, parent=None):
+        super(PlotlyViewer, self).__init__(parent)
+        self.figure = figure
+        self.init_ui()
+
+    def init_ui(self):
+        html = plot(self.figure, output_type='div', include_plotlyjs='cdn', auto_open=False)
+        self.setHtml(html)
+        self.show()
+
 
 class VentanaCalculoBase(QMainWindow):
     def __init__(self, tamano_fuente):
@@ -109,6 +125,7 @@ class VentanaCalculoBase(QMainWindow):
         self.menu_calculo.show()
         self.close()
 
+
 class VentanaCalculadoraIntegrales(VentanaCalculoBase):
     def __init__(self, tamano_fuente):
         super().__init__(tamano_fuente)
@@ -138,6 +155,11 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         self.calculate_button = QPushButton("Calcular Integral")
         self.calculate_button.clicked.connect(self.calculate_integral)
         self.control_layout.addWidget(self.calculate_button)
+
+        self.plot_button = QPushButton("Graficar Función")
+        self.plot_button.clicked.connect(self.plot_function)
+        self.plot_button.setEnabled(False)
+        self.control_layout.addWidget(self.plot_button)
 
         self.result_view = QWebEngineView(self)
         self.result_view.setFixedHeight(200)
@@ -171,8 +193,18 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
             </html>
             """
             self.rendered_view.setHtml(html_content)
+
+            # Verificar si el número de variables es adecuado para graficar
+            variables = expr.free_symbols
+            num_vars = len(variables)
+            if num_vars in [1, 2, 3]:
+                self.plot_button.setEnabled(True)
+            else:
+                self.plot_button.setEnabled(False)
+
         except Exception as e:
             self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
+            self.plot_button.setEnabled(False)
 
     def calculate_integral(self):
         func_text = self.input_function.text()
@@ -188,11 +220,10 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
 
             if not variables:
                 QMessageBox.warning(self, "Variables no encontradas", "No se encontraron variables en la función.")
+                self.plot_button.setEnabled(False)
                 return
 
-            if len(variables) == 1:
-                var = variables.pop()
-            else:
+            if len(variables) >= 1:
                 var = sorted(variables, key=lambda x: str(x))[0]
                 QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para integrar.")
 
@@ -244,9 +275,107 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         except SympifyError as e:
             error_html = f"<p style='color:red;'>Error al interpretar la función: {e}</p>"
             self.result_view.setHtml(error_html)
+            self.plot_button.setEnabled(False)
         except Exception as e:
             error_html = f"<p style='color:red;'>Error al calcular la integral: {e}</p>"
             self.result_view.setHtml(error_html)
+            self.plot_button.setEnabled(False)
+
+    def plot_function(self):
+        func_text = self.input_function.text()
+        func_text_prepared = self.prepare_expression(func_text)
+        try:
+            expr = sympify(func_text_prepared)
+            variables = expr.free_symbols
+            num_vars = len(variables)
+            vars_sorted = sorted(variables, key=lambda x: str(x))
+
+            if num_vars == 1:
+                # Gráfica 2D
+                var = vars_sorted[0]
+                f = lambdify(var, expr, modules=['numpy', custom_math])
+
+                x_vals = np.linspace(-10, 10, 400)
+                y_vals = f(x_vals)
+
+                fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name='f(x)'))
+                fig.update_layout(title='Gráfica de f(x)', xaxis_title=str(var), yaxis_title='f({})'.format(var))
+
+            elif num_vars == 2:
+                # Gráfica 3D de superficie
+                var_x = vars_sorted[0]
+                var_y = vars_sorted[1]
+                f = lambdify((var_x, var_y), expr, modules=['numpy', custom_math])
+
+                x_vals = np.linspace(-5, 5, 50)
+                y_vals = np.linspace(-5, 5, 50)
+                X, Y = np.meshgrid(x_vals, y_vals)
+                Z = f(X, Y)
+
+                # Manejar valores NaN o infinitos
+                Z = np.nan_to_num(Z, nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+                fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
+                fig.update_layout(title='Gráfica 3D de la función', autosize=True,
+                                  scene=dict(
+                                      xaxis_title=str(var_x),
+                                      yaxis_title=str(var_y),
+                                      zaxis_title='f({},{})'.format(var_x, var_y),
+                                  ))
+
+            elif num_vars == 3:
+                # Gráfica 3D de isosuperficie
+                var_x = vars_sorted[0]
+                var_y = vars_sorted[1]
+                var_z = vars_sorted[2]
+                f = lambdify((var_x, var_y, var_z), expr, modules=['numpy', custom_math])
+
+                x_vals = np.linspace(-5, 5, 20)
+                y_vals = np.linspace(-5, 5, 20)
+                z_vals = np.linspace(-5, 5, 20)
+                X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals)
+                F = f(X, Y, Z)
+
+                # Manejar valores NaN o infinitos
+                F = np.nan_to_num(F, nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+                fig = go.Figure(data=go.Isosurface(
+                    x=X.flatten(),
+                    y=Y.flatten(),
+                    z=Z.flatten(),
+                    value=F.flatten(),
+                    isomin=np.nanmin(F),
+                    isomax=np.nanmax(F),
+                    surface_count=3,
+                    colorscale='Plasma',  # Asignar escala de colores
+                    caps=dict(x_show=False, y_show=False, z_show=False),
+                ))
+
+                fig.update_layout(title='Gráfica 3D de la función', autosize=True,
+                                  scene=dict(
+                                      xaxis_title=str(var_x),
+                                      yaxis_title=str(var_y),
+                                      zaxis_title=str(var_z),
+                                  ))
+
+            else:
+                QMessageBox.warning(self, "Variables incorrectas",
+                                    "La función debe tener exactamente 1, 2 o 3 variables para graficar.")
+                return
+
+            # Mostrar la gráfica en el QWebEngineView
+            viewer = PlotlyViewer(fig)
+            self.plot_window = QDialog(self)
+            self.plot_window.setWindowTitle("Gráfica de la Función")
+            layout = QVBoxLayout()
+            self.plot_window.setLayout(layout)
+            layout.addWidget(viewer)
+            self.plot_window.resize(800, 600)
+            self.plot_window.exec_()
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error al graficar", f"No se pudo graficar la función: {e}")
+
 
 class VentanaCalculadoraDerivadas(VentanaCalculoBase):
     def __init__(self, tamano_fuente):
@@ -256,7 +385,7 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
     def initUI(self):
         self.input_function = QLineEdit()
-        self.input_function.setPlaceholderText("Ingrese la función a derivar")
+        self.input_function.setPlaceholderText("Ingrese una función en términos de una sola variable (por ejemplo, x)")
         self.control_layout.addWidget(self.input_function)
 
         self.input_function.textChanged.connect(self.update_rendered_function)
@@ -269,6 +398,11 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
         self.calculateDerivada_button = QPushButton("Calcular Derivada")
         self.calculateDerivada_button.clicked.connect(self.calculate_derivada)
         self.control_layout.addWidget(self.calculateDerivada_button)
+
+        self.plot_button = QPushButton("Graficar Derivada")
+        self.plot_button.clicked.connect(self.plot_function)
+        self.plot_button.setEnabled(False)  # Deshabilitar inicialmente
+        self.control_layout.addWidget(self.plot_button)
 
         self.result_view = QWebEngineView(self)
         self.result_view.setFixedHeight(200)
@@ -302,8 +436,13 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
             </html>
             """
             self.rendered_view.setHtml(html_content)
+
+            # Deshabilitar el botón de graficar hasta que se calcule la derivada
+            self.plot_button.setEnabled(False)
+
         except Exception as e:
             self.rendered_view.setHtml("<p style='color:red;'>Función no válida</p>")
+            self.plot_button.setEnabled(False)
 
     def calculate_derivada(self):
         func_text = self.input_function.text()
@@ -316,15 +455,20 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
             if not variables:
                 QMessageBox.warning(self, "Variables no encontradas", "No se encontraron variables en la función.")
+                self.plot_button.setEnabled(False)
                 return
 
             if len(variables) == 1:
                 var = variables.pop()
-            else:
-                var = sorted(variables, key=lambda x: str(x))[0]
                 QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para derivar.")
+            else:
+                QMessageBox.warning(self, "Demasiadas variables", "Por favor, ingrese una función con una sola variable.")
+                self.plot_button.setEnabled(False)
+                return
 
             result = diff(expr, var)
+            self.derivative_expr = result  # Guardar para graficar
+            self.derivative_var = var      # Guardar la variable de derivación
             latex_result = self.custom_latex_rendering(result)
 
             html_content = f"""
@@ -343,9 +487,49 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
             """
             self.result_view.setHtml(html_content)
 
+            # Habilitar el botón de graficar ya que la derivada es de una variable
+            self.plot_button.setEnabled(True)
+
         except SympifyError as e:
             error_html = f"<p style='color:red;'>Error al interpretar la función: {e}</p>"
             self.result_view.setHtml(error_html)
+            self.plot_button.setEnabled(False)
         except Exception as e:
             error_html = f"<p style='color:red;'>Error al calcular la derivada: {e}</p>"
             self.result_view.setHtml(error_html)
+            self.plot_button.setEnabled(False)
+
+    def plot_function(self):
+        try:
+            # Verificar si derivative_expr está definido
+            if not hasattr(self, 'derivative_expr'):
+                QMessageBox.warning(self, "Derivada no calculada", "Primero debe calcular la derivada antes de graficar.")
+                return
+
+            expr = self.derivative_expr
+            var = self.derivative_var  # Usar la variable de derivación
+
+            # Convertir la expresión a una función numérica
+            f = lambdify(var, expr, modules=['numpy', custom_math])
+
+            x_vals = np.linspace(-10, 10, 400)
+            y_vals = f(x_vals)
+
+            # Manejar valores NaN o infinitos
+            y_vals = np.nan_to_num(y_vals, nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+            fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f"f'({var})"))
+            fig.update_layout(title=f"Gráfica de la derivada f'({var})", xaxis_title=str(var), yaxis_title=f"f'({var})")
+
+            # Mostrar la gráfica en el QWebEngineView
+            viewer = PlotlyViewer(fig)
+            self.plot_window = QDialog(self)
+            self.plot_window.setWindowTitle("Gráfica de la Derivada")
+            layout = QVBoxLayout()
+            self.plot_window.setLayout(layout)
+            layout.addWidget(viewer)
+            self.plot_window.resize(800, 600)
+            self.plot_window.exec_()
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error al graficar", f"No se pudo graficar la derivada: {e}")
