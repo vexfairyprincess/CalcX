@@ -2,14 +2,10 @@
 
 from utils import evaluar_expresion
 
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
-    QTextEdit, QMessageBox, QFrame, QScrollArea, QTableWidget, QHeaderView,
-    QTableWidgetItem, QSpacerItem, QSizePolicy, QGridLayout, QGroupBox
-)
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtGui import QFont, QPixmap, QColor, QIcon
 import sys
 from ventanasMenu import *
 from analisisNumerico import *
@@ -19,37 +15,154 @@ class MenuPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Menú Principal")
+        self.setStyleSheet("background-color: white;") 
         self.resize(800, 600)  # Resizable main window
 
         # Main widget and layout
-        self.main_widget = QWidget()
-        self.setCentralWidget(self.main_widget)
-        self.layout = QGridLayout(self.main_widget)
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        
+        self.main_layout = QVBoxLayout()
 
         # Image
+        logo_layout = QHBoxLayout()
         self.imagen_svg = QSvgWidget("calcXlogo.svg")  # Update this path
-        self.imagen_svg.setFixedSize(350,150)  # Increase the height for a larger logo
-        self.layout.addWidget(self.imagen_svg, 0, 1, 1, 1, Qt.AlignCenter)  # Center the logo in the grid
+        self.imagen_svg.setFixedSize(250,125)  # Increase the height for a larger logo
+        logo_layout.addWidget(self.imagen_svg, alignment= Qt.AlignLeft | Qt.AlignTop)  # Center the logo in the grid
+        
+        self.main_layout.addLayout(logo_layout)
+        
+        self.cartas_layout = QGridLayout()
+        self.cartas_layout.setSpacing(30)
+        self.cartas_layout.setColumnStretch(0, 1)
+        self.cartas_layout.setColumnStretch(1, 1)
+        self.cartas_layout.setColumnStretch(2, 1)
+        
+        self.cartas_layout.setRowStretch(1, 2)
+        self.cartas_layout.setRowStretch(2, 3)
+        
+        self.main_layout.addLayout(self.cartas_layout)
+        
+        self.crear_carta("Álgebra Lineal", "1774128.png", self.abrir_menu_algebra_lineal, 0)
+        self.crear_carta("Análisis Numérico", "43146.png", self.abrir_menu_analisis_numerico, 1)
+        self.crear_carta("Cálculo", "5111141.png", self.abrir_menu_calculo, 2)
+        
+        main_widget.setLayout(self.main_layout)
+        
+        self.showMaximized()
+    
+        """ def agregar_logo_svg(self):
+        self.imagen_svg = QSvgWidget("calcXlogo.svg")
+        self.imagen_svg.setFixedSize(350, 150)
+        
+        contenedor_logo = QWidget()
+        logo_layout = QVBoxLayout()
+        logo_layout.addWidget(self.imagen_svg, alignment=Qt.AlignCenter)    
+        contenedor_logo.setLayout(logo_layout)
+        
+        self.layout.addWidget(contenedor_logo, alignment=Qt.AlignCenter)
+       
+             """
+        
+        
+        
+    def crear_carta(self, text, icon, function, column):
+        carta = QPushButton(text)
+        icon_path = f"icons/{icon}"
+        carta.setIcon(QIcon(icon_path))
+        carta.setIconSize(QSize(75, 75))
+        carta.setStyleSheet("""
+        QPushButton{
+            background-color: #F0EBEB;
+            border: 4px solid #80C8FF;
+            border-radius: 20px;
+            padding: 30px;
+            font-size: 18px;
+            color: black;
+            text-align: center;
+        }
+        QPushButton: hover{
+            background-color: #009ACD;
+            color: black;
+        }
+        QPushButton: pushed{
+            background-color: #007F92;
+        }
+    """)
+        carta.setFixedSize(300, 300)
+        carta.clicked.connect(function)
+        
+        self.cartas_layout.addWidget(carta, 1, column)
 
+        """
         # Buttons for Algebra and Analysis
         self.boton_algebra_lineal = QPushButton("Álgebra Lineal")
         self.boton_algebra_lineal.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_algebra_lineal.setFixedSize(550,50)
+        self.boton_algebra_lineal.setFixedSize(550,65)
         self.boton_algebra_lineal.clicked.connect(self.abrir_menu_algebra_lineal)
+        self.boton_algebra_lineal.setStyleSheet(/"/"/"
+            QPushButton {
+                background-color: #00BFFF;
+                color: white;
+                font-size: 17px;
+                font-weight: bold;
+                border-radius: 10px;
+                padding: 10px;
+                box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+                }
+                QPushButton:hover {
+                    background-color: #009ACD;
+                }
+                QPushButton:pressed {
+                    background-color: #007F92;
+                    }
+                    /"/"/")
         self.layout.addWidget(self.boton_algebra_lineal, 1, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
+
 
         self.boton_analisis_numerico = QPushButton("Análisis Numérico")
         self.boton_analisis_numerico.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_analisis_numerico.setFixedSize(550,50)  # Medium-sized button
+        self.boton_analisis_numerico.setFixedSize(550,65)  # Medium-sized button
         self.boton_analisis_numerico.clicked.connect(self.abrir_menu_analisis_numerico)
+        self.boton_analisis_numerico.setStyleSheet(/"/"/"
+            QPushButton {
+                background-color: #00BFFF;
+                color: white;
+                font-size: 17px;
+                font-weight: bold;
+                border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #009ACD;
+                }
+                QPushButton:pressed {
+                    background-color: #007F92;
+                    }
+                    /"/"/")
         self.layout.addWidget(self.boton_analisis_numerico, 2, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
 
         self.boton_calculo = QPushButton("Cálculo (BETA)")
         self.boton_calculo.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_calculo.setFixedSize(550, 50)  # Medium-sized button
+        self.boton_calculo.setFixedSize(550, 65)  # Medium-sized button
         self.boton_calculo.clicked.connect(self.abrir_menu_calculo)
+        self.boton_calculo.setStyleSheet(/"/"/"
+            QPushButton {
+                background-color: #00BFFF;
+                color: white;
+                font-size: 17px;
+                font-weight: bold;
+                border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #009ACD;
+                }
+                QPushButton:pressed {
+                    background-color: #007F92;
+                    }
+                    /"/"/")
         self.layout.addWidget(self.boton_calculo, 3, 0, 1, 3, Qt.AlignCenter)
-
+        
+        
         # Button to exit application
         self.boton_salir = QPushButton("Salir")
         self.boton_salir.setFont(QFont('Arial', 12))
@@ -57,7 +170,7 @@ class MenuPrincipal(QMainWindow):
         self.boton_salir.clicked.connect(self.close)
         self.layout.addWidget(self.boton_salir, 4, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)  # Bottom left
         self.showMaximized()
-
+        """
 
     def abrir_menu_algebra_lineal(self):
         # Abre el menú de Álgebra Lineal
