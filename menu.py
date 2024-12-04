@@ -34,10 +34,12 @@ class MenuPrincipal(QMainWindow):
         
         self.cartas_layout = QGridLayout()
         self.cartas_layout.setSpacing(30)
+        main_widget.setContentsMargins(20, 20, 20, 20)
         self.cartas_layout.setColumnStretch(0, 1)
         self.cartas_layout.setColumnStretch(1, 1)
         self.cartas_layout.setColumnStretch(2, 1)
         
+        self.cartas_layout.setRowStretch(0, 1)
         self.cartas_layout.setRowStretch(1, 2)
         self.cartas_layout.setRowStretch(2, 3)
         
@@ -51,19 +53,6 @@ class MenuPrincipal(QMainWindow):
         
         self.showMaximized()
     
-        """ def agregar_logo_svg(self):
-        self.imagen_svg = QSvgWidget("calcXlogo.svg")
-        self.imagen_svg.setFixedSize(350, 150)
-        
-        contenedor_logo = QWidget()
-        logo_layout = QVBoxLayout()
-        logo_layout.addWidget(self.imagen_svg, alignment=Qt.AlignCenter)    
-        contenedor_logo.setLayout(logo_layout)
-        
-        self.layout.addWidget(contenedor_logo, alignment=Qt.AlignCenter)
-       
-             """
-        
         
         
     def crear_carta(self, text, icon, function, column):
@@ -80,12 +69,15 @@ class MenuPrincipal(QMainWindow):
             font-size: 18px;
             color: black;
             text-align: center;
+            padding-left: 25px;
         }
-        QPushButton: hover{
-            background-color: #009ACD;
+        
+        QPushButton:hover{
+            background-color: #ADD8E6;
             color: black;
         }
-        QPushButton: pushed{
+        
+        QPushButton:pressed{
             background-color: #007F92;
         }
     """)
