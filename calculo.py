@@ -1,68 +1,81 @@
+# calculo.py
+
 import sys
 import os
 import re
 import numpy as np
-from sympy import symbols, sympify, lambdify, latex, integrate
-from sympy import diff
+from sympy import symbols, sympify, lambdify, latex, integrate, diff
 from sympy.core.sympify import SympifyError
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                              QTextEdit, QDialog, QApplication, QMessageBox, QTableWidget, QTableWidgetItem)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt, QUrl, QThread, pyqtSignal
 from PyQt5.QtGui import QClipboard
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
+
+# Importar custom_math desde custom_modules.py
+from custom_modules import custom_math
 
 class VentanaCalculoBase(QMainWindow):
     def __init__(self, tamano_fuente):
         super().__init__()
         self.tamano_fuente = tamano_fuente
-        self.setGeometry(100, 100, 1400, 800)
+        self.setGeometry(100, 100, 800, 600)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        self.main_layout = QHBoxLayout(self.central_widget)
+        self.main_layout = QVBoxLayout(self.central_widget)
         self.actualizar_fuente_local(self.tamano_fuente)
 
         self.control_layout = QVBoxLayout()
         self.main_layout.addLayout(self.control_layout)
 
-        self.plot_layout = QVBoxLayout()
-        self.main_layout.addLayout(self.plot_layout)
-
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.plot_layout.addWidget(self.canvas)
-
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        self.plot_layout.addWidget(self.toolbar)
-        self.showMaximized()
+        self.show()
 
     def create_math_keyboard(self):
         keyboard_layout = QVBoxLayout()
-        button_layouts = [QHBoxLayout() for _ in range(3)]
-        button_configs = [
-            [('+', '+'), ('-', '-'), ('x', '*'), ('÷', '/'), ('xˣ', '**'), ('√', 'sqrt('), ('ln', 'ln(')],
-            [('log₁₀', 'log(10, x)'), ('logₐ', 'log('), ('sin', 'sin('), ('cos', 'cos('), ('tan', 'tan('), ('sinh', 'sinh('), ('cosh', 'cosh('), ('tanh', 'tanh(')],
-            [('arcsin', 'asin('), ('arccos', 'acos('), ('arctan', 'atan('), ('cot', 'cot('), ('sec', 'sec('), ('csc', 'csc('), ('(', '('), (')', ')'), ('π', 'pi'), ('e', 'E')]
+
+        # Primera fila de botones
+        row1_layout = QHBoxLayout()
+        row1_buttons = [
+            ('+', '+'), ('-', '-'), ('x', '*'), ('÷', '/'),
+            ('xˣ', '**'), ('√', 'sqrt('), ('ln', 'log(')
         ]
-        for layout, buttons in zip(button_layouts, button_configs):
-            for label, value in buttons:
-                button = QPushButton(label)
-                button.clicked.connect(lambda _, v=value, lbl=label: self.insert_text(v, lbl))
-                layout.addWidget(button)
-            keyboard_layout.addLayout(layout)
+        for label, value in row1_buttons:
+            button = QPushButton(label)
+            button.clicked.connect(lambda _, v=value: self.insert_text(v))
+            row1_layout.addWidget(button)
+        keyboard_layout.addLayout(row1_layout)
+
+        # Segunda fila de botones
+        row2_layout = QHBoxLayout()
+        row2_buttons = [
+            ('log₁₀', 'log10('), ('logₐ', 'log('),
+            ('sin', 'sin('), ('cos', 'cos('), ('tan', 'tan('),
+            ('sinh', 'sinh('), ('cosh', 'cosh('), ('tanh', 'tanh(')
+        ]
+        for label, value in row2_buttons:
+            button = QPushButton(label)
+            button.clicked.connect(lambda _, v=value: self.insert_text(v))
+            row2_layout.addWidget(button)
+        keyboard_layout.addLayout(row2_layout)
+
+        # Tercera fila de botones
+        row3_layout = QHBoxLayout()
+        row3_buttons = [
+            ('arcsin', 'asin('), ('arccos', 'acos('), ('arctan', 'atan('),
+            ('cot', 'cot('), ('sec', 'sec('), ('csc', 'csc('),
+            ('(', '('), (')', ')'), ('π', 'pi'), ('e', 'E')
+        ]
+        for label, value in row3_buttons:
+            button = QPushButton(label)
+            button.clicked.connect(lambda _, v=value: self.insert_text(v))
+            row3_layout.addWidget(button)
+        keyboard_layout.addLayout(row3_layout)
+
         return keyboard_layout
 
-    def insert_text(self, text, label):
+    def insert_text(self, text):
         current_text = self.input_function.text()
-        display_text = label if label not in ('+', '-', 'x', '÷', '^', '(', ')', 'π', 'e') else label
-
-        if text == '**':
-            display_text = "^"
-            self.input_function.setText(current_text + '^')
-        else:
-            self.input_function.setText(current_text + text)
+        self.input_function.setText(current_text + text)
         self.input_function.setFocus()
 
     def actualizar_fuente_local(self, tamano):
@@ -81,12 +94,13 @@ class VentanaCalculoBase(QMainWindow):
 
     def prepare_expression(self, expr):
         expr = expr.replace('^', '**').replace('√', 'sqrt').replace('π', 'pi').replace('÷', '/')
+        expr = expr.replace('ln(', 'log(')
         expr = re.sub(r'(\d)([a-zA-Z(])', r'\1*\2', expr)
         return expr
 
     def custom_latex_rendering(self, expr):
         expr_latex = latex(expr)
-        expr_latex = expr_latex.replace(r'\log', r'\ln').replace(r'\\log_([a-zA-Z0-9]+)', r'\\log_{\1}')
+        expr_latex = expr_latex.replace(r'\log', r'\ln')
         return expr_latex
 
     def regresar_menu_calculo(self):
@@ -103,7 +117,7 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
 
     def initUI(self):
         self.input_function = QLineEdit()
-        self.input_function.setPlaceholderText("Ingrese la función a integrar en términos de x")
+        self.input_function.setPlaceholderText("Ingrese la función a integrar")
         self.control_layout.addWidget(self.input_function)
 
         self.input_function.textChanged.connect(self.update_rendered_function)
@@ -125,7 +139,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         self.calculate_button.clicked.connect(self.calculate_integral)
         self.control_layout.addWidget(self.calculate_button)
 
-        # Reemplazar QTextEdit por QWebEngineView para renderizar resultados con MathJax
         self.result_view = QWebEngineView(self)
         self.result_view.setFixedHeight(200)
         self.control_layout.addWidget(self.result_view)
@@ -139,7 +152,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         func_text_prepared = self.prepare_expression(func_text)
 
         try:
-            x = symbols('x')
             expr = sympify(func_text_prepared)
             self.func_expr = expr
 
@@ -153,7 +165,7 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
             </head>
             <body>
                 <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
-                    \\( f(x) = {self.latex_expr} \\)
+                    \\( f = {self.latex_expr} \\)
                 </div>
             </body>
             </html>
@@ -170,20 +182,28 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         upper_limit_text = self.upper_limit_input.text()
 
         try:
-            x = symbols('x')
             expr = sympify(func_text_prepared)
             self.func_expr = expr
+            variables = expr.free_symbols
 
-            # Si se especificaron límites, calcular la integral definida
+            if not variables:
+                QMessageBox.warning(self, "Variables no encontradas", "No se encontraron variables en la función.")
+                return
+
+            if len(variables) == 1:
+                var = variables.pop()
+            else:
+                var = sorted(variables, key=lambda x: str(x))[0]
+                QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para integrar.")
+
             if lower_limit_text and upper_limit_text:
                 lower_limit = sympify(lower_limit_text)
                 upper_limit = sympify(upper_limit_text)
-                result = integrate(expr, (x, lower_limit, upper_limit))  # integral definida
-                result_numeric = result.evalf()  # Valor numérico de la integral
+                result = integrate(expr, (var, lower_limit, upper_limit))
+                result_numeric = result.evalf()
 
-                latex_result = self.custom_latex_rendering(result)  # Renderizado en LaTeX
+                latex_result = self.custom_latex_rendering(result)
 
-                # Renderizar la integral y el valor numérico
                 html_content = f"""
                 <html>
                 <head>
@@ -193,7 +213,7 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 </head>
                 <body>
                     <div style="font-size: 24px; color: black; padding: 20px;">
-                        \\( \\int_{{{latex(lower_limit)}}}^{{{latex(upper_limit)}}} {self.latex_expr} \\, dx = {latex_result} \\)
+                        \\( \\int_{{{latex(lower_limit)}}}^{{{latex(upper_limit)}}} {self.latex_expr} \\, d{var} = {latex_result} \\)
                     </div>
                     <div style="font-size: 20px; color: grey; margin-top: 10px;">
                         \\( \\text{{Valor aproximado: }} {result_numeric} \\)
@@ -202,11 +222,9 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 </html>
                 """
             else:
-                # Si no se especificaron límites, calcular la integral indefinida
-                result = integrate(expr, x)  # integral indefinida
-                latex_result = self.custom_latex_rendering(result)  # Renderizado en LaTeX
+                result = integrate(expr, var)
+                latex_result = self.custom_latex_rendering(result)
 
-                # Renderizar la integral y añadir la constante de integración (C)
                 html_content = f"""
                 <html>
                 <head>
@@ -216,15 +234,12 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 </head>
                 <body>
                     <div style="font-size: 24px; color: black; padding: 20px;">
-                        \\( \\int {self.latex_expr} \\, dx = {latex_result} + C \\)
+                        \\( \\int {self.latex_expr} \\, d{var} = {latex_result} + C \\)
                     </div>
                 </body>
                 </html>
                 """
-            # Mostrar el resultado de la integral en el QWebEngineView
             self.result_view.setHtml(html_content)
-
-            self.plot_integral(expr)
 
         except SympifyError as e:
             error_html = f"<p style='color:red;'>Error al interpretar la función: {e}</p>"
@@ -232,19 +247,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         except Exception as e:
             error_html = f"<p style='color:red;'>Error al calcular la integral: {e}</p>"
             self.result_view.setHtml(error_html)
-
-    def plot_integral(self, expr):
-         self.figure.clear()
-         ax = self.figure.add_subplot(111)
-         x_vals = np.linspace(-10, 10, 400)
-         f = lambdify(symbols('x'), expr, modules=['numpy'])
-         try:
-             y_vals = f(x_vals)
-             ax.plot(x_vals, y_vals, label='f(x)')
-             ax.legend()
-             self.canvas.draw()
-         except Exception as e:
-             QMessageBox.warning(self, "Error de Graficación", f"No se pudo graficar la función: {e}")
 
 class VentanaCalculadoraDerivadas(VentanaCalculoBase):
     def __init__(self, tamano_fuente):
@@ -254,7 +256,7 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
     def initUI(self):
         self.input_function = QLineEdit()
-        self.input_function.setPlaceholderText("Ingrese la función a derivar en términos de x")
+        self.input_function.setPlaceholderText("Ingrese la función a derivar")
         self.control_layout.addWidget(self.input_function)
 
         self.input_function.textChanged.connect(self.update_rendered_function)
@@ -266,7 +268,7 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
         self.calculateDerivada_button = QPushButton("Calcular Derivada")
         self.calculateDerivada_button.clicked.connect(self.calculate_derivada)
-        self.control_layout.addWidget(self.calculateDerivada_button)  # Corrección aquí
+        self.control_layout.addWidget(self.calculateDerivada_button)
 
         self.result_view = QWebEngineView(self)
         self.result_view.setFixedHeight(200)
@@ -281,7 +283,6 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
         func_text_prepared = self.prepare_expression(func_text)
 
         try:
-            x = symbols('x')
             expr = sympify(func_text_prepared)
             self.func_expr = expr
 
@@ -295,7 +296,7 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
             </head>
             <body>
                 <div id="math-output" style="font-size: 28px; color: black; padding: 20px;">
-                    \\( f(x) = {self.latex_expr} \\)
+                    \\( f = {self.latex_expr} \\)
                 </div>
             </body>
             </html>
@@ -309,10 +310,21 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
         func_text_prepared = self.prepare_expression(func_text)
 
         try:
-            x = symbols('x')
             expr = sympify(func_text_prepared)
             self.func_expr = expr
-            result = diff(expr, x)  # Usar diff para derivadas
+            variables = expr.free_symbols
+
+            if not variables:
+                QMessageBox.warning(self, "Variables no encontradas", "No se encontraron variables en la función.")
+                return
+
+            if len(variables) == 1:
+                var = variables.pop()
+            else:
+                var = sorted(variables, key=lambda x: str(x))[0]
+                QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para derivar.")
+
+            result = diff(expr, var)
             latex_result = self.custom_latex_rendering(result)
 
             html_content = f"""
@@ -324,14 +336,12 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
             </head>
             <body>
                 <div style="font-size: 24px; color: black; padding: 20px;">
-                    \\( \\frac{{d}}{{dx}} {self.latex_expr} = {latex_result} \\)
+                    \\( \\frac{{d}}{{d{var}}} {self.latex_expr} = {latex_result} \\)
                 </div>
             </body>
             </html>
             """
             self.result_view.setHtml(html_content)
-
-            self.plot_derivada(expr)
 
         except SympifyError as e:
             error_html = f"<p style='color:red;'>Error al interpretar la función: {e}</p>"
@@ -339,17 +349,3 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
         except Exception as e:
             error_html = f"<p style='color:red;'>Error al calcular la derivada: {e}</p>"
             self.result_view.setHtml(error_html)
-
-    def plot_derivada(self, expr):
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        x_vals = np.linspace(-10, 10, 400)
-        derivative_expr = diff(expr, symbols('x'))  # Calcular la derivada
-        f = lambdify(symbols('x'), derivative_expr, modules=['numpy'])
-        try:
-            y_vals = f(x_vals)
-            ax.plot(x_vals, y_vals, label="f'(x)")
-            ax.legend()
-            self.canvas.draw()
-        except Exception as e:
-            QMessageBox.warning(self, "Error de Graficación", f"No se pudo graficar la derivada: {e}")
