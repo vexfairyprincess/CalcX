@@ -1,0 +1,288 @@
+/* Fondo general de la aplicación */
+QWidget {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* Botones */
+QPushButton {
+    background-color: #80C8FF; /* Azul celeste */
+    color: white; /* Texto blanco */
+    border: 2px solid #007F92; /* Borde azul oscuro */
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #ADD8E6; /* Celeste claro */
+    color: black; /* Texto negro */
+    border: 2px solid #007F92; /* Borde azul oscuro */
+}
+
+QPushButton:pressed {
+    background-color: #007F92; /* Azul oscuro */
+    border-color: #007F92;
+}
+
+QPushButton:disabled {
+    background-color: #F0EBEB; /* Blanco */
+    color: #b3d9db; /* Texto más claro */
+    border-color: #b3d9db;
+}
+
+QPushButton:focus {
+    outline: none;
+}
+
+/* Textos */
+QLabel {
+    color: #007F92; /* Texto azul oscuro */
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Campos de texto */
+QLineEdit {
+    background-color: white;
+    color: #007F92; /* Azul oscuro */
+    border: 1px solid #ADD8E6; /* Celeste claro */
+    padding: 8px;
+    border-radius: 5px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #007F92; /* Azul oscuro al enfocar */
+}
+
+/* Tabs */
+QTabWidget::pane {
+    background-color: #F0EBEB; /* Blanco */
+    border: 1px solid #ADD8E6; /* Celeste claro */
+}
+
+QTabBar::tab {
+    background-color: #ADD8E6; /* Celeste claro */
+    color: #007F92; /* Azul oscuro */
+    padding: 10px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+QTabBar::tab:selected {
+    background-color: #007F92; /* Azul oscuro */
+    color: white;
+}
+
+QTabBar::tab:hover {
+    background-color: #80C8FF; /* Azul celeste */
+}
+
+/* Splitter */
+QSplitter::handle {
+    background-color: #007F92; /* Azul oscuro */
+    border: 1px solid #ADD8E6; /* Celeste claro */
+}
+
+QSplitter::handle:hover {
+    background-color: #007F92; /* Azul oscuro al pasar el cursor */
+}
+
+/* Barra de progreso */
+QProgressBar {
+    background-color: #ADD8E6; /* Celeste claro */
+    color: #007F92;
+    border-radius: 10px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #007F92; /* Azul oscuro */
+    border-radius: 10px;
+}
+
+/* Sliders */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #ADD8E6; /* Celeste claro */
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: #007F92; /* Azul oscuro */
+    border: 2px solid #056e79; /* Azul más profundo */
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    margin: -5px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #056e79; /* Azul más profundo */
+}
+
+/* Scrollbars */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background-color: #ADD8E6; /* Celeste claro */
+    border: none;
+    width: 10px;
+    height: 10px;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background-color: #007F92; /* Azul oscuro */
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background-color: #056e79; /* Azul más profundo */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: none;
+    border: none;
+}
+
+/* Cuadro de mensajes y otros diálogos */
+QMessageBox {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    border: 2px solid #007F92; /* Azul oscuro */
+    border-radius: 10px;
+}
+
+/* Estilo para Stacked Widgets */
+QStackedWidget {
+    border: 1px solid #ADD8E6; /* Celeste claro */
+}
+
+/* QComboBox */
+QComboBox {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    border: 1px solid #007F92; /* Azul oscuro */
+    border-radius: 5px;
+    padding: 5px 10px; /* Espaciado interno */
+    font-size: 14px;
+}
+
+QComboBox:hover {
+    background-color: #ADD8E6; /* Celeste claro */
+}
+
+QComboBox::drop-down {
+    border-left: 1px solid #007F92; /* Azul oscuro */
+    width: 30px;
+    background: #F0EBEB; /* Blanco */
+}
+
+QComboBox::down-arrow {
+    image: url(down-arrow.png);
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF; /* Blanco */
+    border: 1px solid #007F92; /* Azul oscuro */
+    selection-background-color: #ADD8E6; /* Celeste claro */
+    selection-color: #007F92; /* Azul oscuro */
+}
+
+/* QTextEdit */
+QTextEdit {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    border: 2px solid #007F92; /* Azul oscuro */
+    padding: 10px;
+    border-radius: 5px;
+    font-family: "Courier New";
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* QCheckBox */
+QCheckBox {
+    color: #007F92; /* Azul oscuro */
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #F0EBEB; /* Blanco */
+    padding: 5px;
+    border-radius: 5px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #007F92; /* Azul oscuro */
+    border: 2px solid #056e79; /* Azul más profundo */
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: white;
+    border: 2px solid #007F92; /* Azul oscuro */
+}
+
+/* QLineEdit */
+QLineEdit {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    border: 2px solid #007F92; /* Azul oscuro */
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #007F92; /* Azul oscuro */
+}
+
+/* QTableWidget */
+QTableWidget {
+    background-color: #F0EBEB; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    border: 1px solid #ADD8E6; /* Celeste claro */
+    border-radius: 5px;
+}
+
+/* Estilo de las celdas del QTableWidget */
+QTableWidget::item {
+    padding: 8px;
+    border: 1px solid #ADD8E6; /* Celeste claro */
+    background-color: #FFFFFF; /* Blanco */
+    color: #007F92; /* Azul oscuro */
+}
+
+/* Estilo para las celdas seleccionadas */
+QTableWidget::item:selected {
+    background-color: #ADD8E6; /* Celeste claro */
+    color: #007F92; /* Azul oscuro */
+}
+
+/* Estilo para la cabecera de la tabla */
+QHeaderView::section {
+    background-color: #007F92; /* Azul oscuro */
+    color: white;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    border: 1px solid #ADD8E6; /* Celeste claro */
+}
+
+/* Estilo cuando se pasa el cursor por encima de las celdas */
+QTableWidget::item:hover {
+    background-color: #ADD8E6; /* Celeste claro */
+}
+
+/* Borde de la tabla cuando se selecciona */
+QTableWidget:focus {
+    border: 2px solid #007F92; /* Azul oscuro */
+}
