@@ -1,10 +1,16 @@
-# calculo.py
-
 import sys
 import os
 import re
 import numpy as np
-from sympy import symbols, sympify, lambdify, latex, integrate, diff
+import sympy
+from sympy.codegen.fnodes import elemental
+from sympy import (
+    symbols, sympify, lambdify, latex, integrate, diff,
+    sin, cos, tan, cot, sec, csc,
+    asin, acos, atan,
+    sinh, cosh, tanh,
+    sqrt, log, pi, E
+)
 from sympy.core.sympify import SympifyError
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                              QTextEdit, QDialog, QApplication, QMessageBox)
@@ -14,7 +20,6 @@ from PyQt5.QtGui import QClipboard
 
 from custom_modules import custom_math
 
-# Importar Plotly
 import plotly.graph_objects as go
 from plotly.offline import plot
 
@@ -44,7 +49,7 @@ class VentanaCalculoBase(QMainWindow):
         self.control_layout = QVBoxLayout()
         self.main_layout.addLayout(self.control_layout)
 
-        self.show()
+        self.showMaximized()
 
     def create_math_keyboard(self):
         keyboard_layout = QVBoxLayout()
@@ -64,7 +69,7 @@ class VentanaCalculoBase(QMainWindow):
         # Segunda fila de botones
         row2_layout = QHBoxLayout()
         row2_buttons = [
-            ('log₁₀', 'log10('), ('logₐ', 'log('),
+            ('log₁₀', 'log1(x, 10'), ('logₐ', 'log('),
             ('sin', 'sin('), ('cos', 'cos('), ('tan', 'tan('),
             ('sinh', 'sinh('), ('cosh', 'cosh('), ('tanh', 'tanh(')
         ]
@@ -109,9 +114,8 @@ class VentanaCalculoBase(QMainWindow):
         """)
 
     def prepare_expression(self, expr):
-        expr = expr.replace('^', '**').replace('√', 'sqrt').replace('π', 'pi').replace('÷', '/')
-        expr = expr.replace('ln(', 'log(')
         expr = re.sub(r'(\d)([a-zA-Z(])', r'\1*\2', expr)
+        expr = expr.replace('^', '**')
         return expr
 
     def custom_latex_rendering(self, expr):
@@ -131,6 +135,8 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
         super().__init__(tamano_fuente)
         self.setWindowTitle("Calculadora de Integrales")
         self.initUI()
+        self.lower_limit = None
+        self.upper_limit = None
 
     def initUI(self):
         self.input_function = QLineEdit()
@@ -227,9 +233,16 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 var = sorted(variables, key=lambda x: str(x))[0]
                 QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para integrar.")
 
+            # Reiniciar límites anteriores
+            self.lower_limit = None
+            self.upper_limit = None
+
             if lower_limit_text and upper_limit_text:
                 lower_limit = sympify(lower_limit_text)
                 upper_limit = sympify(upper_limit_text)
+                self.lower_limit = float(lower_limit)
+                self.upper_limit = float(upper_limit)
+
                 result = integrate(expr, (var, lower_limit, upper_limit))
                 result_numeric = result.evalf()
 
@@ -291,18 +304,41 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
             vars_sorted = sorted(variables, key=lambda x: str(x))
 
             if num_vars == 1:
-                # Gráfica 2D
                 var = vars_sorted[0]
                 f = lambdify(var, expr, modules=['numpy', custom_math])
 
                 x_vals = np.linspace(-10, 10, 400)
                 y_vals = f(x_vals)
 
-                fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name='f(x)'))
-                fig.update_layout(title='Gráfica de f(x)', xaxis_title=str(var), yaxis_title='f({})'.format(var))
+                # Trazado de la función principal
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name='f(x)'))
+
+                fig.update_layout(title='Gráfica de f(x)', xaxis_title=str(var), yaxis_title=f'f({var})')
+
+                # Si se han calculado los límites inferior y superior, mostrar el área bajo la curva
+                if self.lower_limit is not None and self.upper_limit is not None:
+                    # Generar puntos entre lower_limit y upper_limit
+                    mask = (x_vals >= self.lower_limit) & (x_vals <= self.upper_limit)
+                    x_area = x_vals[mask]
+                    y_area = y_vals[mask]
+
+                    # Añadir el área bajo la curva entre los límites
+                    fig.add_trace(go.Scatter(
+                        x=x_area,
+                        y=y_area,
+                        mode='lines',
+                        fill='tozeroy',  # Llena el área desde la curva hasta y=0
+                        name='Área bajo la curva',
+                        fillcolor='rgba(0, 128, 0, 0.3)'  # Color semitransparente
+                    ))
+
+                    fig.update_layout(title='Integración: área bajo la curva', xaxis_title=str(var), yaxis_title='f({})'.format(var))
 
             elif num_vars == 2:
-                # Gráfica 3D de superficie
+                # (Opcional) Podrías implementar algo similar para 2 variables,
+                # pero generalmente el área bajo la curva es un concepto de 1 variable.
+                # Aquí dejamos la lógica igual que antes.
                 var_x = vars_sorted[0]
                 var_y = vars_sorted[1]
                 f = lambdify((var_x, var_y), expr, modules=['numpy', custom_math])
@@ -312,7 +348,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 X, Y = np.meshgrid(x_vals, y_vals)
                 Z = f(X, Y)
 
-                # Manejar valores NaN o infinitos
                 Z = np.nan_to_num(Z, nan=np.nan, posinf=np.nan, neginf=np.nan)
 
                 fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
@@ -320,11 +355,10 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                                   scene=dict(
                                       xaxis_title=str(var_x),
                                       yaxis_title=str(var_y),
-                                      zaxis_title='f({},{})'.format(var_x, var_y),
+                                      zaxis_title=f'f({var_x},{var_y})'
                                   ))
 
             elif num_vars == 3:
-                # Gráfica 3D de isosuperficie
                 var_x = vars_sorted[0]
                 var_y = vars_sorted[1]
                 var_z = vars_sorted[2]
@@ -336,7 +370,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals)
                 F = f(X, Y, Z)
 
-                # Manejar valores NaN o infinitos
                 F = np.nan_to_num(F, nan=np.nan, posinf=np.nan, neginf=np.nan)
 
                 fig = go.Figure(data=go.Isosurface(
@@ -347,7 +380,7 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                     isomin=np.nanmin(F),
                     isomax=np.nanmax(F),
                     surface_count=3,
-                    colorscale='Plasma',  # Asignar escala de colores
+                    colorscale='Plasma',
                     caps=dict(x_show=False, y_show=False, z_show=False),
                 ))
 
@@ -363,7 +396,6 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                                     "La función debe tener exactamente 1, 2 o 3 variables para graficar.")
                 return
 
-            # Mostrar la gráfica en el QWebEngineView
             viewer = PlotlyViewer(fig)
             self.plot_window = QDialog(self)
             self.plot_window.setWindowTitle("Gráfica de la Función")
@@ -375,6 +407,7 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
 
         except Exception as e:
             QMessageBox.warning(self, "Error al graficar", f"No se pudo graficar la función: {e}")
+
 
 
 class VentanaCalculadoraDerivadas(VentanaCalculoBase):
@@ -460,15 +493,21 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
             if len(variables) == 1:
                 var = variables.pop()
-                QMessageBox.information(self, "Variable seleccionada", f"Se utilizará la variable '{var}' para derivar.")
+                QMessageBox.information(self, "Variable seleccionada",
+                                        f"Se utilizará la variable '{var}' para derivar.")
             else:
-                QMessageBox.warning(self, "Demasiadas variables", "Por favor, ingrese una función con una sola variable.")
+                QMessageBox.warning(self, "Demasiadas variables",
+                                    "Por favor, ingrese una función con una sola variable.")
                 self.plot_button.setEnabled(False)
                 return
 
+            # Calcular la derivada
             result = diff(expr, var)
+            # Simplificar la expresión resultante
+            result = sympy.simplify(result)
+
             self.derivative_expr = result  # Guardar para graficar
-            self.derivative_var = var      # Guardar la variable de derivación
+            self.derivative_var = var  # Guardar la variable de derivación
             latex_result = self.custom_latex_rendering(result)
 
             html_content = f"""
