@@ -19,43 +19,122 @@ class MenuPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Menú Principal")
-        self.resize(800, 600)  # Resizable main window
+        self.resize(800, 600)
 
-        # Main widget and layout
+        # Widget principal y layout
         self.main_widget = QWidget()
         self.setCentralWidget(self.main_widget)
-        self.layout = QGridLayout(self.main_widget)
+        main_layout = QVBoxLayout(self.main_widget)
 
-        # Image
-        self.imagen_svg = QSvgWidget("calcXlogo.svg")  # Update this path
-        self.imagen_svg.setFixedSize(350,150)  # Increase the height for a larger logo
-        self.layout.addWidget(self.imagen_svg, 0, 1, 1, 1, Qt.AlignCenter)  # Center the logo in the grid
+        # Logo centrado arriba
+        self.imagen_svg = QSvgWidget("calcXlogo.svg")  # Ajustar la ruta al logo
+        self.imagen_svg.setFixedSize(350,150)
+        main_layout.addWidget(self.imagen_svg, 0, Qt.AlignCenter)
 
-        # Buttons for Algebra and Analysis
-        self.boton_algebra_lineal = QPushButton("Álgebra Lineal")
-        self.boton_algebra_lineal.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_algebra_lineal.setFixedSize(550,50)
-        self.boton_algebra_lineal.clicked.connect(self.abrir_menu_algebra_lineal)
-        self.layout.addWidget(self.boton_algebra_lineal, 1, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
+        # Layout horizontal para las 3 cajas
+        boxes_layout = QHBoxLayout()
+        main_layout.addLayout(boxes_layout)
 
-        self.boton_analisis_numerico = QPushButton("Análisis Numérico")
-        self.boton_analisis_numerico.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_analisis_numerico.setFixedSize(550,50)  # Medium-sized button
-        self.boton_analisis_numerico.clicked.connect(self.abrir_menu_analisis_numerico)
-        self.layout.addWidget(self.boton_analisis_numerico, 2, 0, 1, 3, Qt.AlignCenter)  # Center button under the logo
+        def crear_caja(titulo, callback, icon_path):
+            # Caja externa (frame)
+            frame = QFrame()
+            frame.setStyleSheet("""
+                background-color: rgba(249,249,249,0.58);
+                border: 1px solid lightblue;
+            """)
+            # SIZE NORMAL PC SCREEN frame.setFixedSize(250,350)
+            frame.setFixedSize(450, 550)
+            vbox = QVBoxLayout(frame)
 
-        self.boton_calculo = QPushButton("Cálculo (BETA)")
-        self.boton_calculo.setFont(QFont('Arial', 12))  # Set font size
-        self.boton_calculo.setFixedSize(550, 50)  # Medium-sized button
-        self.boton_calculo.clicked.connect(self.abrir_menu_calculo)
-        self.layout.addWidget(self.boton_calculo, 3, 0, 1, 3, Qt.AlignCenter)
+            # Icono SVG sin borde alrededor
+            icon_label = QSvgWidget(icon_path)
+            # NORMAL PC SCREEN icon_label.setFixedSize(125,125)
+            icon_label.setFixedSize(325, 325)
+            # Quitar el borde del ícono:
+            icon_label.setStyleSheet("border: none; background-color: transparent;")
 
-        # Button to exit application
+            vbox.addStretch()
+            vbox.addWidget(icon_label, 0, Qt.AlignCenter)
+            vbox.addStretch()
+
+            # Línea negra en la parte inferior
+            linea = QFrame()
+            linea.setFrameShape(QFrame.HLine)
+            linea.setFrameShadow(QFrame.Sunken)
+            linea.setStyleSheet("color: black; background-color: black;")
+            linea.setFixedHeight(5)
+            vbox.addWidget(linea)
+
+            # Botón con el texto dentro de la caja
+            boton = QPushButton(titulo)
+            boton.setFixedSize(200, 40)
+            boton.setFont(QFont('Arial', 12))
+            boton.clicked.connect(callback)
+
+            # Cursor mano y hover para interacción visual
+            boton.setCursor(Qt.PointingHandCursor)
+            boton.setStyleSheet("""
+                QPushButton {
+                    background-color: white;
+                }
+                QPushButton:hover {
+                    background-color: #e0e0e0;
+                }
+            """)
+
+            vbox.addWidget(boton, 0, Qt.AlignCenter)
+
+            return frame
+
+        # Crear las 3 cajas con sus botones y sus íconos
+        caja_algebra = crear_caja("Álgebra lineal", self.abrir_menu_algebra_lineal, "icons/matrix.svg")
+        caja_analisis = crear_caja("Análisis numérico", self.abrir_menu_analisis_numerico, "icons/numericalA.svg")
+        caja_calculo = crear_caja("Cálculo", self.abrir_menu_calculo, "icons/calculus.svg")
+
+        # Añadir cajas al layout horizontal
+        boxes_layout.addStretch()
+        boxes_layout.addWidget(caja_algebra)
+        boxes_layout.addStretch()
+        boxes_layout.addWidget(caja_analisis)
+        boxes_layout.addStretch()
+        boxes_layout.addWidget(caja_calculo)
+        boxes_layout.addStretch()
+
+        # Layout al final para el mensaje y el botón
+        bottom_layout = QVBoxLayout()
+        main_layout.addLayout(bottom_layout)
+
+        # Mensaje pequeño de copyright
+        # APA 7 con sólo apellidos, sin fecha (n.d.), y URL
+        message_label = QLabel()
+        message_label.setTextFormat(Qt.RichText)
+        message_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        message_label.setOpenExternalLinks(True)
+        message_label.setAlignment(Qt.AlignCenter)
+        message_label.setStyleSheet("font-size: 12px; color: gray;")
+
+        #copuright message
+        message = (
+            "© 2024 Kenaro Team. Todos los derechos reservados.<br>"
+            "(Martínez Somarriba, Castro Calero, Chavarría Baltodano, & Mora Mendoza, n.d.)<br>"
+            "<a href='https://8d39-190-184-96-187.ngrok-free.app/'>https://8d39-190-184-96-187.ngrok-free.app/</a>"
+        )
+        message_label.setText(message)
+        bottom_layout.addWidget(message_label, 0, Qt.AlignCenter)
+
         self.boton_salir = QPushButton("Salir")
         self.boton_salir.setFont(QFont('Arial', 12))
         self.boton_salir.setFixedSize(150,30)
         self.boton_salir.clicked.connect(self.close)
-        self.layout.addWidget(self.boton_salir, 4, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)  # Bottom left
+        self.boton_salir.setCursor(Qt.PointingHandCursor)
+        self.boton_salir.setStyleSheet("""
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+        """)
+        bottom_layout.addWidget(self.boton_salir, 0, Qt.AlignLeft)
+
+
         self.showMaximized()
 
 

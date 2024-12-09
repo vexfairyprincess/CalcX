@@ -1,0 +1,9 @@
+# This file is used internally by FFMPEG.
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00000.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00001.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00002.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00003.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00004.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00005.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00006.mp4'
+file 'file:C:/Users/hicas/Desktop/Tmp_calculadora/CalcX/videos/videos/1080p30/partial_movie_files/BisectionAnimation/uncached_00007.mp4'
