@@ -310,35 +310,33 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 x_vals = np.linspace(-10, 10, 400)
                 y_vals = f(x_vals)
 
-                # Trazado de la función principal
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name='f(x)'))
-
                 fig.update_layout(title='Gráfica de f(x)', xaxis_title=str(var), yaxis_title=f'f({var})')
 
-                # Si se han calculado los límites inferior y superior, mostrar el área bajo la curva
+                # Cambiar el color de ejes x y y
+                fig.update_xaxes(linecolor='red', linewidth=2, gridcolor='lightgray')
+                fig.update_yaxes(linecolor='blue', linewidth=2, gridcolor='lightgray')
+
                 if self.lower_limit is not None and self.upper_limit is not None:
-                    # Generar puntos entre lower_limit y upper_limit
                     mask = (x_vals >= self.lower_limit) & (x_vals <= self.upper_limit)
                     x_area = x_vals[mask]
                     y_area = y_vals[mask]
 
-                    # Añadir el área bajo la curva entre los límites
                     fig.add_trace(go.Scatter(
                         x=x_area,
                         y=y_area,
                         mode='lines',
-                        fill='tozeroy',  # Llena el área desde la curva hasta y=0
+                        fill='tozeroy',
                         name='Área bajo la curva',
-                        fillcolor='rgba(0, 128, 0, 0.3)'  # Color semitransparente
+                        fillcolor='rgba(0, 128, 0, 0.3)'
                     ))
 
                     fig.update_layout(title='Integración: área bajo la curva', xaxis_title=str(var), yaxis_title='f({})'.format(var))
+                    fig.update_xaxes(linecolor='red', linewidth=2, gridcolor='lightgray')
+                    fig.update_yaxes(linecolor='blue', linewidth=2, gridcolor='lightgray')
 
             elif num_vars == 2:
-                # (Opcional) Podrías implementar algo similar para 2 variables,
-                # pero generalmente el área bajo la curva es un concepto de 1 variable.
-                # Aquí dejamos la lógica igual que antes.
                 var_x = vars_sorted[0]
                 var_y = vars_sorted[1]
                 f = lambdify((var_x, var_y), expr, modules=['numpy', custom_math])
@@ -353,8 +351,8 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
                                   scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
+                                      xaxis=dict(linecolor='red'),
+                                      yaxis=dict(linecolor='blue'),
                                       zaxis_title=f'f({var_x},{var_y})'
                                   ))
 
@@ -386,9 +384,9 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
 
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
                                   scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
-                                      zaxis_title=str(var_z),
+                                      xaxis=dict(linecolor='red'),
+                                      yaxis=dict(linecolor='blue'),
+                                      zaxis=dict(linecolor='green'),
                                   ))
 
             else:
@@ -540,27 +538,26 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
     def plot_function(self):
         try:
-            # Verificar si derivative_expr está definido
             if not hasattr(self, 'derivative_expr'):
                 QMessageBox.warning(self, "Derivada no calculada", "Primero debe calcular la derivada antes de graficar.")
                 return
 
             expr = self.derivative_expr
-            var = self.derivative_var  # Usar la variable de derivación
+            var = self.derivative_var
 
-            # Convertir la expresión a una función numérica
             f = lambdify(var, expr, modules=['numpy', custom_math])
 
             x_vals = np.linspace(-10, 10, 400)
             y_vals = f(x_vals)
-
-            # Manejar valores NaN o infinitos
             y_vals = np.nan_to_num(y_vals, nan=np.nan, posinf=np.nan, neginf=np.nan)
 
             fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f"f'({var})"))
             fig.update_layout(title=f"Gráfica de la derivada f'({var})", xaxis_title=str(var), yaxis_title=f"f'({var})")
 
-            # Mostrar la gráfica en el QWebEngineView
+            # Cambiar colores de ejes en 2D
+            fig.update_xaxes(linecolor='red', linewidth=2, gridcolor='lightgray')
+            fig.update_yaxes(linecolor='blue', linewidth=2, gridcolor='lightgray')
+
             viewer = PlotlyViewer(fig)
             self.plot_window = QDialog(self)
             self.plot_window.setWindowTitle("Gráfica de la Derivada")
