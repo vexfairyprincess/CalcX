@@ -416,8 +416,13 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
     def initUI(self):
         self.input_function = QLineEdit()
-        self.input_function.setPlaceholderText("Ingrese una función en términos de una sola variable (por ejemplo, x)")
+        self.input_function.setPlaceholderText("Ingrese la función (en caso de múltiples variables se tomará la primera si no especifica")
         self.control_layout.addWidget(self.input_function)
+
+        # Campo opcional para variable de derivación
+        self.variable_input = QLineEdit()
+        self.variable_input.setPlaceholderText("Variable a derivar (opcional), ej: x")
+        self.control_layout.addWidget(self.variable_input)
 
         self.input_function.textChanged.connect(self.update_rendered_function)
         self.rendered_view = QWebEngineView(self)
@@ -478,31 +483,49 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
     def calculate_derivada(self):
         func_text = self.input_function.text()
         func_text_prepared = self.prepare_expression(func_text)
+        desired_var = self.variable_input.text().strip()  # Variable solicitada por el usuario
 
         try:
             expr = sympify(func_text_prepared)
             self.func_expr = expr
             variables = expr.free_symbols
 
+            # Convertir a lista para poder manipularlas
+            vars_list = sorted(list(variables), key=lambda v: str(v))
+
             if not variables:
                 QMessageBox.warning(self, "Variables no encontradas", "No se encontraron variables en la función.")
                 self.plot_button.setEnabled(False)
                 return
 
-            if len(variables) == 1:
-                var = variables.pop()
-                QMessageBox.information(self, "Variable seleccionada",
-                                        f"Se utilizará la variable '{var}' para derivar.")
+            # Si el usuario no especificó variable y hay solo una, se usa esa.
+            # Si hay más de una y no especificó, se usa la primera.
+            if desired_var == "":
+                if len(vars_list) == 1:
+                    var = vars_list[0]
+                    QMessageBox.information(self, "Variable seleccionada",
+                                            f"Se utilizará la variable '{var}' para derivar.")
+                else:
+                    # Múltiples variables, se toma la primera según el orden
+                    var = vars_list[0]
+                    QMessageBox.information(self, "Variable seleccionada",
+                                            f"Se utilizará la variable '{var}' ya que no especificó ninguna.")
             else:
-                QMessageBox.warning(self, "Demasiadas variables",
-                                    "Por favor, ingrese una función con una sola variable.")
-                self.plot_button.setEnabled(False)
-                return
+                # El usuario especificó una variable, verificar si está en las variables
+                var_symbol = sympy.Symbol(desired_var)
+                if var_symbol in variables:
+                    var = var_symbol
+                    QMessageBox.information(self, "Variable seleccionada",
+                                            f"Se utilizará la variable '{var}' para derivar.")
+                else:
+                    QMessageBox.warning(self, "Variable no encontrada",
+                                        f"La variable '{desired_var}' no está en la función. Las variables son: {', '.join([str(v) for v in vars_list])}")
+                    self.plot_button.setEnabled(False)
+                    return
 
             # Calcular la derivada
             result = diff(expr, var)
-            # Simplificar la expresión resultante
-            result = sympy.simplify(result)
+
 
             self.derivative_expr = result  # Guardar para graficar
             self.derivative_var = var  # Guardar la variable de derivación
@@ -543,21 +566,87 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
                 return
 
             expr = self.derivative_expr
-            var = self.derivative_var
+            variables = sorted(list(expr.free_symbols), key=lambda v: str(v))
+            num_vars = len(variables)
 
-            f = lambdify(var, expr, modules=['numpy', custom_math])
+            if num_vars == 0:
+                QMessageBox.warning(self, "Sin variables", "La función derivada no tiene variables.")
+                return
+            elif num_vars > 3:
+                QMessageBox.warning(self, "Demasiadas variables", "No se puede graficar si hay más de 3 variables.")
+                return
 
-            x_vals = np.linspace(-10, 10, 400)
-            y_vals = f(x_vals)
-            y_vals = np.nan_to_num(y_vals, nan=np.nan, posinf=np.nan, neginf=np.nan)
+            # Crear la función con lambdify sobre todas las variables
+            f = lambdify(variables, expr, modules=['numpy', custom_math])
 
-            fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f"f'({var})"))
-            fig.update_layout(title=f"Gráfica de la derivada f'({var})", xaxis_title=str(var), yaxis_title=f"f'({var})")
+            if num_vars == 1:
+                # Grafica 2D (linea)
+                var = variables[0]
+                x_vals = np.linspace(-10, 10, 400)
+                y_vals = f(x_vals)
+                y_vals = np.nan_to_num(y_vals, nan=np.nan, posinf=np.nan, neginf=np.nan)
 
-            # Cambiar colores de ejes en 2D
-            fig.update_xaxes(linecolor='red', linewidth=2, gridcolor='lightgray')
-            fig.update_yaxes(linecolor='blue', linewidth=2, gridcolor='lightgray')
+                fig = go.Figure(data=go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f"f'({var})"))
+                fig.update_layout(title=f"Gráfica de la derivada f'({var})", xaxis_title=str(var), yaxis_title=f"f'({var})")
 
+                # Cambiar colores de ejes en 2D
+                fig.update_xaxes(linecolor='red', linewidth=2, gridcolor='lightgray')
+                fig.update_yaxes(linecolor='blue', linewidth=2, gridcolor='lightgray')
+
+            elif num_vars == 2:
+                # Grafica 3D (Superficie): f(x,y)
+                var_x, var_y = variables[0], variables[1]
+                x_vals = np.linspace(-5, 5, 50)
+                y_vals = np.linspace(-5, 5, 50)
+                X, Y = np.meshgrid(x_vals, y_vals)
+                Z = f(X, Y)
+                Z = np.nan_to_num(Z, nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+                fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
+                fig.update_layout(title='Gráfica 3D de la derivada', autosize=True,
+                                  scene=dict(
+                                      xaxis_title=str(var_x),
+                                      yaxis_title=str(var_y),
+                                      zaxis_title='f(%s,%s)' % (var_x, var_y),
+                                  ))
+
+            else: # num_vars == 3
+                # Grafica 3D (Isosuperficie): f(x,y,z)
+                var_x, var_y, var_z = variables[0], variables[1], variables[2]
+                x_vals = np.linspace(-5, 5, 20)
+                y_vals = np.linspace(-5, 5, 20)
+                z_vals = np.linspace(-5, 5, 20)
+                X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals)
+                F = f(X, Y, Z)
+                F = np.nan_to_num(F, nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+                # Seleccionar isovalores adecuados
+                isomin = np.nanmin(F)
+                isomax = np.nanmax(F)
+                if np.isnan(isomin) or np.isnan(isomax):
+                    QMessageBox.warning(self, "Error al graficar", "La función evaluada produce valores no válidos.")
+                    return
+
+                fig = go.Figure(data=go.Isosurface(
+                    x=X.flatten(),
+                    y=Y.flatten(),
+                    z=Z.flatten(),
+                    value=F.flatten(),
+                    isomin=isomin,
+                    isomax=isomax,
+                    surface_count=3,
+                    colorscale='Plasma',
+                    caps=dict(x_show=False, y_show=False, z_show=False),
+                ))
+
+                fig.update_layout(title='Gráfica 3D de la derivada',
+                                  scene=dict(
+                                      xaxis_title=str(var_x),
+                                      yaxis_title=str(var_y),
+                                      zaxis_title=str(var_z),
+                                  ))
+
+            # Mostrar la gráfica en el QWebEngineView
             viewer = PlotlyViewer(fig)
             self.plot_window = QDialog(self)
             self.plot_window.setWindowTitle("Gráfica de la Derivada")
