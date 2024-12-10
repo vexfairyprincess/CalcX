@@ -119,7 +119,7 @@ class MenuPrincipal(QMainWindow):
         message = (
             "© 2024 Kenaro Team. Todos los derechos reservados.<br>"
             "(Martínez Somarriba, Castro Calero, Chavarría Baltodano, & Mora Mendoza, n.d.)<br>"
-            "<a href='https://8d39-190-184-96-187.ngrok-free.app/'>https://8d39-190-184-96-187.ngrok-free.app/</a>"
+            "<a href='https://upright-mole-enormous.ngrok-free.app'>Nuestro Sitio Web</a>"
         )
         message_label.setText(message)
         bottom_layout.addWidget(message_label, 0, Qt.AlignCenter)
