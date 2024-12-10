@@ -350,11 +350,11 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
 
                 fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
-                                  scene=dict(
-                                      xaxis=dict(linecolor='red'),
-                                      yaxis=dict(linecolor='blue'),
-                                      zaxis_title=f'f({var_x},{var_y})'
-                                  ))
+                    scene=dict(
+                        xaxis=dict(linecolor='red'),
+                        yaxis=dict(linecolor='blue'),
+                        zaxis_title=f'f({var_x},{var_y})'
+                            ))
 
             elif num_vars == 3:
                 var_x = vars_sorted[0]
@@ -383,11 +383,11 @@ class VentanaCalculadoraIntegrales(VentanaCalculoBase):
                 ))
 
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
-                                  scene=dict(
-                                      xaxis=dict(linecolor='red'),
-                                      yaxis=dict(linecolor='blue'),
-                                      zaxis=dict(linecolor='green'),
-                                  ))
+                    scene=dict(
+                        xaxis=dict(linecolor='red'),
+                        yaxis=dict(linecolor='blue'),
+                        zaxis=dict(linecolor='green'),
+                    ))
 
             else:
                 QMessageBox.warning(self, "Variables incorrectas",
@@ -543,19 +543,19 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
             latex_result = self.custom_latex_rendering(result)
 
             html_content = f"""
-               <html>
-               <head>
-                   <script type="text/javascript" async
-                       src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js">
-                   </script>
-               </head>
-               <body>
-                   <div style="font-size: 24px; color: black; padding: 20px;">
-                       \\( \\frac{{d}}{{d{var}}} {self.latex_expr} = {latex_result} \\)
-                   </div>
-               </body>
-               </html>
-               """
+                <html>
+                <head>
+                    <script type="text/javascript" async
+                        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js">
+                    </script>
+                </head>
+                <body>
+                    <div style="font-size: 24px; color: black; padding: 20px;">
+                        \\( \\frac{{d}}{{d{var}}} {self.latex_expr} = {latex_result} \\)
+                    </div>
+                </body>
+                </html>
+                """
             self.result_view.setHtml(html_content)
 
             # Habilitar el botón de graficar derivada ya que se ha calculado
@@ -615,11 +615,11 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
                 fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
                 fig.update_layout(title='Gráfica 3D de la derivada', autosize=True,
-                                  scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
-                                      zaxis_title='f(%s,%s)' % (var_x, var_y),
-                                  ))
+                    scene=dict(
+                        xaxis_title=str(var_x),
+                        yaxis_title=str(var_y),
+                        zaxis_title='f(%s,%s)' % (var_x, var_y),
+                    ))
 
             else: # num_vars == 3
                 # Grafica 3D (Isosuperficie): f(x,y,z)
@@ -651,11 +651,11 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
                 ))
 
                 fig.update_layout(title='Gráfica 3D de la derivada',
-                                  scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
-                                      zaxis_title=str(var_z),
-                                  ))
+                    scene=dict(
+                        xaxis_title=str(var_x),
+                        yaxis_title=str(var_y),
+                        zaxis_title=str(var_z),
+                    ))
 
             # Mostrar la gráfica en el QWebEngineView
             viewer = PlotlyViewer(fig)
@@ -711,11 +711,11 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
 
                 fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis')])
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
-                                  scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
-                                      zaxis_title=f'f({var_x},{var_y})'
-                                  ))
+                    scene=dict(
+                        xaxis_title=str(var_x),
+                        yaxis_title=str(var_y),
+                        zaxis_title=f'f({var_x},{var_y})'
+                    ))
 
             else:  # num_vars == 3
                 var_x, var_y, var_z = variables[0], variables[1], variables[2]
@@ -745,11 +745,11 @@ class VentanaCalculadoraDerivadas(VentanaCalculoBase):
                 ))
 
                 fig.update_layout(title='Gráfica 3D de la función', autosize=True,
-                                  scene=dict(
-                                      xaxis_title=str(var_x),
-                                      yaxis_title=str(var_y),
-                                      zaxis_title=str(var_z),
-                                  ))
+                    scene=dict(
+                        xaxis_title=str(var_x),
+                        yaxis_title=str(var_y),
+                        zaxis_title=str(var_z),
+                    ))
 
             viewer = PlotlyViewer(fig)
             self.plot_window = QDialog(self)
